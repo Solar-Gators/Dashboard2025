@@ -335,10 +335,17 @@ void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
   /* Infinite loop */
+
+  //create veraibe, for storing ADC variable
+
   for(;;)
 
   {
-	  // Merge Conflict
+	//Code for reading ADC values
+
+
+	//code sending data over CAN
+
     osDelay(1);
   }
   /* USER CODE END StartTask02 */
