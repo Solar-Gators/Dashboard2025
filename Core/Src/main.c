@@ -392,6 +392,7 @@ void StartTask02(void *argument)
   //create veraibe, for storing ADC variable
 
   for(;;)
+
   {
 	//Code for reading ADC values
 
@@ -401,6 +402,7 @@ void StartTask02(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartTask02 */
+
 }
 
 /**
