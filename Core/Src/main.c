@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "Drivers/TCAL9538RSVR.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -42,6 +43,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+
+I2C_HandleTypeDef hi2c1;
+
+TCAL9538RSVR tcalU5; // inputs (names are from altium)
+TCAL9538RSVR tcalU16; // inputs
+TCAL9538RSVR tcalU7; // outputs
 
 /* Definitions for HeartBeat */
 osThreadId_t HeartBeatHandle;
@@ -94,7 +101,14 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  TCAL9538RSVR_INIT(&tcalU5, &hi2c1, 0b10); // input port with wires address lines 10
+  TCAL9538RSVR_INIT(&tcalU16, &hi2c1, 0b01); // input port with w wired address lines 01
+  TCAL9538RSVR_INIT(&tcalU7, &hi2c1, 0b00); // output port with w wired addr lines 00
 
+  TCAL9538RSVR_SetDirection(&tcalU7, 0); // set as outputs
+
+  TCAL9538RSVR_SetInterrupts(&tcalU5, 0b11110000); // enable interrupts for pins that have connections
+  TCAL9538RSVR_SetInterrupts(&tcalU16, 0b00111111);
   /* USER CODE END Init */
 
   /* Configure the system clock */
