@@ -58,7 +58,7 @@ uint8_t TCAL9538RSVR_INIT(TCAL9538RSVR *dev, I2C_HandleTypeDef *i2cHandle, uint8
     dev->i2cHandle = i2cHandle;
     dev->triggeredInterrupts = 0;
     // hardware address should be from 0-3
-    // A0 = GND, A1 = GND == 0
+    // (A0 = GND, A1 = GND) == 0
     hardwareAddress &= 0b00000011;
     dev->deviceAddress = TCAL9538RSVR_ADDR | (hardwareAddress << 1);
 
