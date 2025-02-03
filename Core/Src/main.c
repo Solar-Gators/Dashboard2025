@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-//test
+#include "TCAL9538RSVR.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -105,8 +105,14 @@ void StartTask04(void *argument);
 // GPIO Expander Interrupt Handler
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	TCAL9538RSVR_HandleInterrupt(&U5);
-	TCAL9538RSVR_HandleInterrupt(&U16);
+	if (TCAL9538RSVR_HandleInterrupt(&U5) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	if(TCAL9538RSVR_HandleInterrupt(&U16) != HAL_OK)
+	{
+		Error_Handler();
+	}
 }
 /* USER CODE END 0 */
 
