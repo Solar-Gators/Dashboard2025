@@ -56,7 +56,7 @@ uint8_t TCAL9538RSVR_INIT(TCAL9538RSVR *dev, I2C_HandleTypeDef *i2cHandle, uint8
 
 
     dev->i2cHandle = i2cHandle;
-    dev->triggeredInterrupts = 0;
+    dev->portValues = 0;
     // hardware address should be from 0-3
     // (A0 = GND, A1 = GND) == 0
     hardwareAddress &= 0b00000011;
@@ -103,12 +103,15 @@ HAL_StatusTypeDef TCAL9538RSVR_HandleInterrupt(TCAL9538RSVR* dev)
     uint8_t errNum = 0;
 	HAL_StatusTypeDef status;
     uint8_t intPinBitMask = 0;
+    uint8_t triggeredInterrupts = 0;
 
     // read interrupt status register, puts a bit mask of the pin that triggered the interrupt in intPinBitMask
-    status = TCAL9538RSVR_ReadRegister(dev, TCAL9538RSVR_INT_STATUS, &dev->triggeredInterrupts);
+    status = TCAL9538RSVR_ReadInput(dev, &dev->portValues);
+
+    status = TCAL9538RSVR_ReadRegister(dev, TCAL9538RSVR_INT_STATUS, &triggeredInterrupts);
     errNum += (status != HAL_OK);
 
-    status = TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_INT_STATUS, &dev->triggeredInterrupts);
+    status = TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_INT_STATUS, &triggeredInterrupts);
     errNum += (status != HAL_OK);
 
     return (errNum);

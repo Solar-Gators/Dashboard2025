@@ -14,7 +14,7 @@ typedef struct
 {
     I2C_HandleTypeDef *i2cHandle;
     uint8_t deviceAddress;
-    uint8_t triggeredInterrupts;
+    uint8_t portValues;
 
 }TCAL9538RSVR;
 
