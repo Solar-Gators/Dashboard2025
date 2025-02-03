@@ -1,4 +1,4 @@
-#include "TCAL9538RSVR.h"
+#include "Drivers/TCAL9538RSVR.h"
 #include <string.h>
 
 #define TCAL9538RSVR_ADDR 0b1110000
@@ -102,7 +102,7 @@ HAL_StatusTypeDef TCAL9538RSVR_HandleInterrupt(TCAL9538RSVR* dev)
 {
     uint8_t errNum = 0;
 	HAL_StatusTypeDef status;
-    uint8_t intPinBitMask = 0;
+    // uint8_t intPinBitMask = 0;
 
     // read interrupt status register, puts a bit mask of the pin that triggered the interrupt in intPinBitMask
     status = TCAL9538RSVR_ReadRegister(dev, TCAL9538RSVR_INT_STATUS, &dev->triggeredInterrupts);

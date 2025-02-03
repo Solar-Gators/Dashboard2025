@@ -8,6 +8,7 @@ extern "C"{
 #define TCAL9538RSVR_H
 
 #include "stm32l4xx_hal.h"
+#include <stdint.h>
 
 
 typedef struct

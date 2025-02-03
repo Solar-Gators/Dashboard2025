@@ -69,9 +69,18 @@ const osThreadAttr_t ReadIOExpander_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for Outputs_Control */
+osThreadId_t Outputs_ControlHandle;
+const osThreadAttr_t Outputs_Control_attributes = {
+  .name = "Outputs_Control",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* USER CODE BEGIN PV */
-TCAL9538RSVR U5;
+TCAL9538RSVR U5; // inputs
 TCAL9538RSVR U16;
+
+TCAL9538RSVR U7; // output
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -81,9 +90,10 @@ static void MX_ADC1_Init(void);
 static void MX_I2C4_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_CAN2_Init(void);
-void StartDefaultTask(void *argument);
+void StartTask01(void *argument);
 void StartTask02(void *argument);
 void StartTask03(void *argument);
+void StartTask04(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -117,8 +127,10 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0b00001111, 0b00001111);
+  TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0b00001111, 0b00001111); // inputs
   TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b11000000, 0b11000000);
+
+  TCAL9538RSVR_INIT(&U7, &hi2c4, 0b00, 0b00000000, 0b00000000); // output
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -159,13 +171,16 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of HeartBeat */
-  HeartBeatHandle = osThreadNew(StartDefaultTask, NULL, &HeartBeat_attributes);
+  HeartBeatHandle = osThreadNew(StartTask01, NULL, &HeartBeat_attributes);
 
   /* creation of Critical_Inputs */
   Critical_InputsHandle = osThreadNew(StartTask02, NULL, &Critical_Inputs_attributes);
 
   /* creation of ReadIOExpander */
   ReadIOExpanderHandle = osThreadNew(StartTask03, NULL, &ReadIOExpander_attributes);
+
+  /* creation of Outputs_Control */
+  Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -468,14 +483,14 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_StartTask01 */
 /**
   * @brief  Function implementing the HeartBeat thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+/* USER CODE END Header_StartTask01 */
+void StartTask01(void *argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
@@ -530,6 +545,24 @@ void StartTask03(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartTask03 */
+}
+
+/* USER CODE BEGIN Header_StartTask04 */
+/**
+* @brief Function implementing the Outputs_Control thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTask04 */
+void StartTask04(void *argument)
+{
+  /* USER CODE BEGIN StartTask04 */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartTask04 */
 }
 
 /**
