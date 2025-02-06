@@ -116,7 +116,6 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	 * 2 - Right Turn
 	 * 3 - BMS ?
 	 *
-	 * Flags [0b10101010, 0b01010101] Input = [0b00000000, 0b11111111]
 	 *
 	 * Debounce buttons software
 	 * CAN message is sending state, ie lights should be blinking, etc.
@@ -600,6 +599,7 @@ void StartTask03(void *argument)
 	  }
 
 	  // Send CAN messages
+	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
 	  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
 	  {
 		  Error_Handler();
