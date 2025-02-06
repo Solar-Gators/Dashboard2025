@@ -33,6 +33,9 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+// Returns 0 or 1 if bit at pos in var is set
+#define CHECK_BIT(var,pos) !!((var) & (1<<(pos)))
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -70,8 +73,10 @@ const osThreadAttr_t ReadIOExpander_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-TCAL9538RSVR U5;
-TCAL9538RSVR U16;
+TCAL9538RSVR U5; // input 1
+TCAL9538RSVR U16; // input 2
+
+uint8_t GPIO_Interrupt_Triggered;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -92,17 +97,50 @@ void StartTask03(void *argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
+{
+	/*
+	 * Byte 0:
+	 * 0 - Main
+	 * 1 - Break
+	 * 2 - Mode
+	 * 3 - MC
+	 * 4 - Array
+	 * 5 - Extra 1
+	 * 6 - Horn (global boolean)
+	 * 7 - PTT (global boolean)
+	 *
+	 * Byte 1:
+	 * 0 - Blinkers
+	 * 1 - Left Turn
+	 * 2 - Right Turn
+	 * 3 - BMS ?
+	 *
+	 * Flags [0b10101010, 0b01010101] Input = [0b00000000, 0b11111111]
+	 *
+	 * Debounce buttons software
+	 * CAN message is sending state, ie lights should be blinking, etc.
+	 */
+
+	flags[0] = 0;
+	flags[1] = 0;
+
+	flags[0] |= CHECK_BIT(*Input2, 4) << 0; // Main
+	flags[0] |= CHECK_BIT(*Input2, 5) << 1; // Break
+	flags[0] |= CHECK_BIT(*Input2, 0) << 2; // Mode
+	flags[0] |= CHECK_BIT(*Input1, 5) << 3; // MC
+	flags[0] |= CHECK_BIT(*Input1, 6) << 4; // Array
+	flags[0] |= CHECK_BIT(*Input1, 4) << 5; // Extra 1
+	//flags[0] |= CHECK_BIT(?, ?) << 6; // Horn
+	//flags[0] |= CHECK_BIT(?, ?) << 7; // PTT
+
+	//flags[1] |= CHECK_BIT() << 0;
+
+}
 // GPIO Expander Interrupt Handler
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	if (TCAL9538RSVR_HandleInterrupt(&U5) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	if(TCAL9538RSVR_HandleInterrupt(&U16) != HAL_OK)
-	{
-		Error_Handler();
-	}
+	GPIO_Interrupt_Triggered = 1;
 }
 /* USER CODE END 0 */
 
@@ -529,11 +567,44 @@ void StartTask02(void *argument)
 /* USER CODE END Header_StartTask03 */
 void StartTask03(void *argument)
 {
-  /* USER CODE BEGIN StartTask03 */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
+	/* USER CODE BEGIN StartTask03 */
+
+	CAN_TxHeaderTypeDef TxHeader;
+	uint8_t TxData[8] = { 0 };
+	uint32_t TxMailbox;
+
+	TxHeader.IDE = CAN_ID_STD; // Standard ID (not extended)
+	TxHeader.StdId = 0x3FF; // 11 bit Identifier !!Change!!
+	TxHeader.RTR = CAN_RTR_DATA; // Std RTR Data frame
+	TxHeader.DLC = 8; // 8 bytes being transmitted
+
+	Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
+
+
+	/* Infinite loop */
+	for(;;)
+	{
+	  // Read TCAL Input and update flags
+	  if (GPIO_Interrupt_Triggered != 0)
+	  {
+		  if (TCAL9538RSVR_HandleInterrupt(&U5) != HAL_OK)
+		  {
+			  Error_Handler();
+		  }
+		  if(TCAL9538RSVR_HandleInterrupt(&U16) != HAL_OK)
+		  {
+			  Error_Handler();
+		  }
+		  Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
+		  GPIO_Interrupt_Triggered = 0;
+	  }
+
+	  // Send CAN messages
+	  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+	  {
+		  Error_Handler();
+	  }
+	  osDelay(1);
   }
   /* USER CODE END StartTask03 */
 }
