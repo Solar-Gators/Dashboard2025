@@ -104,9 +104,10 @@ HAL_StatusTypeDef TCAL9538RSVR_HandleInterrupt(TCAL9538RSVR* dev)
 	HAL_StatusTypeDef status;
     uint8_t triggeredInterrupts = 0;
 
-    // read interrupt status register, puts a bit mask of the pin that triggered the interrupt in intPinBitMask
+    // Read updated input values
     status = TCAL9538RSVR_ReadInput(dev, &dev->portValues);
 
+    // read interrupt status register, puts a bit mask of the pin that triggered the interrupt in intPinBitMask
     status = TCAL9538RSVR_ReadRegister(dev, TCAL9538RSVR_INT_STATUS, &triggeredInterrupts);
     errNum += (status != HAL_OK);
 
