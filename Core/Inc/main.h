@@ -61,14 +61,6 @@ void Error_Handler(void);
 #define OK_LED_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
-// Output port bitmasks
-#define HORN_CTRL        (1 << 0)
-#define FAN_CTRL         (1 << 1)
-#define R_HEADLIGHT_CTRL (1 << 2)
-#define L_HEADLIGHT_CTRL (1 << 3)
-#define FL_LIGHT_CTRL    (1 << 4)
-#define FR_LIGHT_CTRL    (1 << 5)
-
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

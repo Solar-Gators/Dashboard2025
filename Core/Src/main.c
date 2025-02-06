@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "TCAL9538RSVR.h"
+#include "defines.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -89,6 +90,7 @@ TCAL9538RSVR U7; // output
 uint8_t GPIO_Interrupt_Triggered;
 uint8_t outputPortState = 0; // variable with state of output port
 uint8_t uart_rx = 0; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
+uint8_t prev_uart_rx = 0; // variable to help with toggle logic
 
 /* USER CODE END PV */
 
@@ -565,12 +567,38 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-
-  // code for handling the data recieved over uart
+  // code for handling the data received over uart
   if(huart->Instance == UART4)
   {
-    // i would use the uart_rx variable to fill the outputPortState variable once
-    // i know what the data is 
+    /*
+    uint8_t new_presses = uart_rx & ~prev_uart_rx; // bit mask of what buttons were pressed since last time
+    if (new_presses & BUTTON_LEFT_TURN) {
+      if (outputPortState & OUTPUT_FL_LIGHT_CTRL) {
+        outputPortState &= ~OUTPUT_FL_LIGHT_CTRL;
+      } else {
+        outputPortState |= OUTPUT_FL_LIGHT_CTRL;
+        outputPortState &= ~OUTPUT_FR_LIGHT_CTRL;
+      }
+    }
+    if (new_presses & BUTTON_RIGHT_TURN) {
+      if (outputPortState & OUTPUT_FR_LIGHT_CTRL) {
+        outputPortState &= ~OUTPUT_FR_LIGHT_CTRL;
+      } else {
+        outputPortState |= OUTPUT_FR_LIGHT_CTRL;
+        outputPortState &= ~OUTPUT_FL_LIGHT_CTRL;
+      }
+    }
+    if (new_presses & BUTTON_HAZARD) {
+      outputPortState ^= (OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
+    }
+    if (new_presses & BUTTON_HEADLIGHTS) {
+      outputPortState ^= (OUTPUT_L_HEAD_CTRL | OUTPUT_R_HEAD_CTRL);
+    }
+    */
+
+
+
+    prev_uart_rx = uart_rx;
   }
 
   HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // reenables uart interrupt
