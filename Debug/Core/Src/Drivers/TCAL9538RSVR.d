@@ -1,5 +1,5 @@
 Core/Src/Drivers/TCAL9538RSVR.o: ../Core/Src/Drivers/TCAL9538RSVR.c \
- /home/jackb/Documents/UniversityofFlorida/SolarGators/stm32cubeide_projects/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h \
+ ../Core/Inc/Drivers/TCAL9538RSVR.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
  ../Core/Inc/stm32l4xx_hal_conf.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h \
@@ -31,8 +31,10 @@ Core/Src/Drivers/TCAL9538RSVR.o: ../Core/Src/Drivers/TCAL9538RSVR.c \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h
-/home/jackb/Documents/UniversityofFlorida/SolarGators/stm32cubeide_projects/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h:
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h
+../Core/Inc/Drivers/TCAL9538RSVR.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h:
@@ -65,3 +67,5 @@ Core/Src/Drivers/TCAL9538RSVR.o: ../Core/Src/Drivers/TCAL9538RSVR.c \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:

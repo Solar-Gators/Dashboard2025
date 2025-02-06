@@ -51,6 +51,8 @@ CAN_HandleTypeDef hcan2;
 
 I2C_HandleTypeDef hi2c4;
 
+UART_HandleTypeDef huart4;
+
 /* Definitions for HeartBeat */
 osThreadId_t HeartBeatHandle;
 const osThreadAttr_t HeartBeat_attributes = {
@@ -72,11 +74,22 @@ const osThreadAttr_t ReadIOExpander_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for Outputs_Control */
+osThreadId_t Outputs_ControlHandle;
+const osThreadAttr_t Outputs_Control_attributes = {
+  .name = "Outputs_Control",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* USER CODE BEGIN PV */
 TCAL9538RSVR U5; // input 1
 TCAL9538RSVR U16; // input 2
+TCAL9538RSVR U7; // output
 
 uint8_t GPIO_Interrupt_Triggered;
+uint8_t outputPortState = 0; // variable with state of output port
+uint8_t uart_rx = 0; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -86,9 +99,11 @@ static void MX_ADC1_Init(void);
 static void MX_I2C4_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_CAN2_Init(void);
-void StartDefaultTask(void *argument);
+static void MX_UART4_Init(void);
+void StartTask01(void *argument);
 void StartTask02(void *argument);
 void StartTask03(void *argument);
+void StartTask04(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -160,8 +175,9 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0b00001111, 0b00001111);
+  TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0b00001111, 0b00001111); // inputs
   TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b11000000, 0b11000000);
+  TCAL9538RSVR_INIT(&U7, &hi2c4, 0b00, 0b00000000, 0b00000000); // output
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -177,8 +193,9 @@ int main(void)
   MX_I2C4_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enables uart interrupt, it will call the interrupt when one byte is recieved
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -202,13 +219,16 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of HeartBeat */
-  HeartBeatHandle = osThreadNew(StartDefaultTask, NULL, &HeartBeat_attributes);
+  HeartBeatHandle = osThreadNew(StartTask01, NULL, &HeartBeat_attributes);
 
   /* creation of Critical_Inputs */
   Critical_InputsHandle = osThreadNew(StartTask02, NULL, &Critical_Inputs_attributes);
 
   /* creation of ReadIOExpander */
   ReadIOExpanderHandle = osThreadNew(StartTask03, NULL, &ReadIOExpander_attributes);
+
+  /* creation of Outputs_Control */
+  Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -468,6 +488,41 @@ static void MX_I2C4_Init(void)
 }
 
 /**
+  * @brief UART4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_UART4_Init(void)
+{
+
+  /* USER CODE BEGIN UART4_Init 0 */
+
+  /* USER CODE END UART4_Init 0 */
+
+  /* USER CODE BEGIN UART4_Init 1 */
+
+  /* USER CODE END UART4_Init 1 */
+  huart4.Instance = UART4;
+  huart4.Init.BaudRate = 9600;
+  huart4.Init.WordLength = UART_WORDLENGTH_8B;
+  huart4.Init.StopBits = UART_STOPBITS_1;
+  huart4.Init.Parity = UART_PARITY_NONE;
+  huart4.Init.Mode = UART_MODE_TX_RX;
+  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART4_Init 2 */
+
+  /* USER CODE END UART4_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -508,17 +563,28 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
 
+  // code for handling the data recieved over uart
+  if(huart->Instance == UART4)
+  {
+    // i would use the uart_rx variable to fill the outputPortState variable once
+    // i know what the data is 
+  }
+
+  HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // reenables uart interrupt
+}
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_StartTask01 */
 /**
   * @brief  Function implementing the HeartBeat thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+/* USER CODE END Header_StartTask01 */
+void StartTask01(void *argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
@@ -607,6 +673,32 @@ void StartTask03(void *argument)
 	  osDelay(1);
   }
   /* USER CODE END StartTask03 */
+}
+
+/* USER CODE BEGIN Header_StartTask04 */
+/**
+* @brief Function implementing the Outputs_Control thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTask04 */
+void StartTask04(void *argument)
+{
+  /* USER CODE BEGIN StartTask04 */
+  /* Infinite loop */
+  for(;;)
+  {
+
+    // outputPortState needs to be updated somewhere here / in a uart interrupt
+
+    if(TCAL9538RSVR_SetOutput(&U7, &outputPortState) != HAL_OK)
+    {
+    	Error_Handler();
+    }
+
+    osDelay(50);
+  }
+  /* USER CODE END StartTask04 */
 }
 
 /**
