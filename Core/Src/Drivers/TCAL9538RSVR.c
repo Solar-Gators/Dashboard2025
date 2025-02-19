@@ -1,7 +1,7 @@
 #include "Drivers/TCAL9538RSVR.h"
 #include <string.h>
 
-#define TCAL9538RSVR_ADDR 0b1110000
+#define TCAL9538RSVR_ADDR 0b11100000
 #define TCAL9538RSVR_GPIO_INPUT 0x00
 #define TCAL9538RSVR_GPIO_OUTPUT 0x01
 #define TCAL9538RSVR_DIR_CONFIG 0x03
@@ -60,9 +60,10 @@ uint8_t TCAL9538RSVR_INIT(TCAL9538RSVR *dev, I2C_HandleTypeDef *i2cHandle, uint8
     // hardware address should be from 0-3
     // (A0 = GND, A1 = GND) == 0
     hardwareAddress &= 0b00000011;
-    dev->deviceAddress = TCAL9538RSVR_ADDR | (hardwareAddress << 1);
+    dev->deviceAddress = TCAL9538RSVR_ADDR | (hardwareAddress<<1);
+    uint8_t hold_bitMask = direction_bitMask;
 
-    status = TCAL9538RSVR_SetDirection(dev, direction_bitMask);
+    status = TCAL9538RSVR_SetDirection(dev, &hold_bitMask);
     errNum += (status != HAL_OK);
 
     status = TCAL9538RSVR_SetInterrupts(dev, interrupt_bitMask);
@@ -78,9 +79,9 @@ uint8_t TCAL9538RSVR_INIT(TCAL9538RSVR *dev, I2C_HandleTypeDef *i2cHandle, uint8
  * 					default is input
  * @retval HAL_StatusTypeDef : HAL_Status
  */
-HAL_StatusTypeDef TCAL9538RSVR_SetDirection(TCAL9538RSVR* dev, uint8_t bitMask)
+HAL_StatusTypeDef TCAL9538RSVR_SetDirection(TCAL9538RSVR* dev, uint8_t* bitMask)
 {
-    return TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_DIR_CONFIG, &bitMask);
+    return TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_DIR_CONFIG, bitMask);
 }
 
 /**
@@ -111,8 +112,8 @@ HAL_StatusTypeDef TCAL9538RSVR_HandleInterrupt(TCAL9538RSVR* dev)
     status = TCAL9538RSVR_ReadRegister(dev, TCAL9538RSVR_INT_STATUS, &triggeredInterrupts);
     errNum += (status != HAL_OK);
 
-    status = TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_INT_STATUS, &triggeredInterrupts);
-    errNum += (status != HAL_OK);
+    //status = TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_INT_STATUS, &triggeredInterrupts);
+    //errNum += (status != HAL_OK);
 
     return (errNum);
 }
@@ -145,5 +146,5 @@ HAL_StatusTypeDef TCAL9538RSVR_ReadRegister(TCAL9538RSVR *dev, uint8_t reg, uint
 }
 HAL_StatusTypeDef TCAL9538RSVR_WriteRegister(TCAL9538RSVR *dev, uint8_t reg, uint8_t *data)
 {
-    return(HAL_I2C_Mem_Read(dev->i2cHandle, dev->deviceAddress, reg, I2C_MEMADD_SIZE_8BIT, data, 1, HAL_MAX_DELAY));
+    return(HAL_I2C_Mem_Write(dev->i2cHandle, dev->deviceAddress, reg, I2C_MEMADD_SIZE_8BIT, data, 1, HAL_MAX_DELAY));
 }

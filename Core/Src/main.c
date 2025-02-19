@@ -83,11 +83,26 @@ const osThreadAttr_t Outputs_Control_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
+StaticSemaphore_t   mutex_control_block_;
+const osMutexAttr_t mutex_attributes_ = {
+	.name = "CANFrame Mutex",
+	.attr_bits = osMutexRecursive,
+	.cb_mem = &mutex_control_block_,
+	.cb_size = sizeof(mutex_control_block_),
+};
+
+
 TCAL9538RSVR U5; // input 1
 TCAL9538RSVR U16; // input 2
 TCAL9538RSVR U7; // output
 
-uint8_t GPIO_Interrupt_Triggered;
+uint16_t CruiseControlSpeed; //need range 0-65,535
+
+static uint8_t GPIO_Interrupt_Triggered;
+static uint8_t stableInput1, stableInput2;
+static uint8_t debounceCount1, debounceCount2;
+
+
 uint8_t outputPortState = 0; // variable with state of output port
 uint8_t uart_rx = 0; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
 uint8_t prev_uart_rx = 0; // variable to help with toggle logic
@@ -134,7 +149,8 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	 * 3 - BMS ?
 	 *
 	 *
-	 * Debounce buttons software
+	 * Debounce buttons software (maybe)
+	 * Check if toggling or just setting (toggling blinkers yes but toggling break)
 	 * CAN message is sending state, ie lights should be blinking, etc.
 	 */
 
@@ -147,12 +163,33 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	flags[0] |= CHECK_BIT(*Input1, 5) << 3; // MC
 	flags[0] |= CHECK_BIT(*Input1, 6) << 4; // Array
 	flags[0] |= CHECK_BIT(*Input1, 4) << 5; // Extra 1
-	//flags[0] |= CHECK_BIT(?, ?) << 6; // Horn
-	//flags[0] |= CHECK_BIT(?, ?) << 7; // PTT
+	flags[0] |= CHECK_BIT(outputPortState, 5) << 6; // Horn
+	flags[0] |= CHECK_BIT(outputPortState, 6) << 7; // PTT
 
-	//flags[1] |= CHECK_BIT() << 0;
+	flags[1] |= CHECK_BIT(outputPortState, 2) << 0; // Blinkers
+	flags[1] |= CHECK_BIT(outputPortState, 0) << 1; // Left Turn Signal
+	flags[1] |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
 
 }
+
+uint8_t updateDebounce(uint8_t stable, uint8_t newReading, uint8_t *counter) {
+    if (newReading != stable) {
+        (*counter)++;
+        if (*counter >= 3) {
+            *counter = 0;
+            return newReading;
+        }
+    } else {
+        *counter = 0;
+    }
+    return stable;
+}
+
+void CruiseControlManagement()
+{
+
+}
+
 // GPIO Expander Interrupt Handler
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
@@ -177,9 +214,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0b00001111, 0b00001111); // inputs
-  TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b11000000, 0b11000000);
-  TCAL9538RSVR_INIT(&U7, &hi2c4, 0b00, 0b00000000, 0b00000000); // output
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -191,12 +226,19 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ADC1_Init();
+ // MX_ADC1_Init();
   MX_I2C4_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
+  if (TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0b11110000, 0b00001111) != HAL_OK) { Error_Handler(); } // inputs
+  uint8_t reg_read_hold;
+  TCAL9538RSVR_ReadRegister(&U5, 0x45, &reg_read_hold);
+  //if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b00111111, 0b11000000) != HAL_OK) { Error_Handler(); }
+  if (TCAL9538RSVR_INIT(&U7, &hi2c4, 0x00, 0b00000000, 0b00000000) != HAL_OK) { Error_Handler(); } // output
+
+
   HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enables uart interrupt, it will call the interrupt when one byte is recieved
   /* USER CODE END 2 */
 
@@ -230,7 +272,7 @@ int main(void)
   ReadIOExpanderHandle = osThreadNew(StartTask03, NULL, &ReadIOExpander_attributes);
 
   /* creation of Outputs_Control */
-  Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
+  //Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -543,11 +585,11 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(OK_LED_GPIO_Port, OK_LED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PC2 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  /*Configure GPIO pin : Alert1_Pin */
+  GPIO_InitStruct.Pin = Alert1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(Alert1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : OK_LED_Pin */
   GPIO_InitStruct.Pin = OK_LED_Pin;
@@ -616,9 +658,12 @@ void StartTask01(void *argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
+	uint8_t var = 0b11111111;
   for(;;)
   {
 	HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
+	//var = ~var;
+	TCAL9538RSVR_SetOutput(&U7, &var);
     osDelay(500);
   }
   /* USER CODE END 5 */
@@ -637,13 +682,13 @@ void StartTask02(void *argument)
   /* Infinite loop */
 
   //create veraibe, for storing ADC variable
-
+	uint8_t var;
   for(;;)
 
   {
 	//Code for reading ADC values
 
-
+	  TCAL9538RSVR_ReadInput(&U5, &var);
 	//code sending data over CAN
 
     osDelay(1);
@@ -660,7 +705,9 @@ void StartTask02(void *argument)
 /* USER CODE END Header_StartTask03 */
 void StartTask03(void *argument)
 {
-	/* USER CODE BEGIN StartTask03 */
+  /* USER CODE BEGIN StartTask03 */
+
+
 
 	CAN_TxHeaderTypeDef TxHeader;
 	uint8_t TxData[8] = { 0 };
@@ -672,7 +719,8 @@ void StartTask03(void *argument)
 	TxHeader.DLC = 8; // 8 bytes being transmitted
 
 	Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
-
+	stableInput1 = U5.portValues;
+	stableInput2 = U16.portValues;
 
 	/* Infinite loop */
 	for(;;)
@@ -680,24 +728,26 @@ void StartTask03(void *argument)
 	  // Read TCAL Input and update flags
 	  if (GPIO_Interrupt_Triggered != 0)
 	  {
-		  if (TCAL9538RSVR_HandleInterrupt(&U5) != HAL_OK)
-		  {
-			  Error_Handler();
-		  }
-		  if(TCAL9538RSVR_HandleInterrupt(&U16) != HAL_OK)
-		  {
-			  Error_Handler();
-		  }
+		  if (TCAL9538RSVR_HandleInterrupt(&U5) != HAL_OK){ Error_Handler(); }
+		  //if (TCAL9538RSVR_HandleInterrupt(&U16) != HAL_OK){ Error_Handler(); }
+
+		  uint8_t newInput1 = U5.portValues;
+		  uint8_t newInput2 = U16.portValues;
+
+		  stableInput1 = updateDebounce(stableInput1, newInput1, &debounceCount1);
+		  //stableInput2 = updateDebounce(stableInput2, newInput2, &debounceCount2);
+
 		  Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
+
 		  GPIO_Interrupt_Triggered = 0;
 	  }
 
 	  // Send CAN messages
-	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
-	  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-	  {
-		  Error_Handler();
-	  }
+	  //while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+//	  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+//	  {
+//		  Error_Handler();
+//	  }
 	  osDelay(1);
   }
   /* USER CODE END StartTask03 */
