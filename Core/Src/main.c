@@ -226,7 +226,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
- // MX_ADC1_Init();
+  MX_ADC1_Init();
   MX_I2C4_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
@@ -682,16 +682,43 @@ void StartTask02(void *argument)
   /* Infinite loop */
 
   //create veraibe, for storing ADC variable
-	uint8_t var;
+	uint16_t adc_var;
   for(;;)
 
   {
 	//Code for reading ADC values
+	  HAL_ADC_Start(&hadc1);// Wait for conversion to complete
+	  if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK){
+	      // Read ADC value
+		  adc_var = HAL_ADC_GetValue(&hadc1);
 
-	  TCAL9538RSVR_ReadInput(&U5, &var);
+
+		  CAN_TxHeaderTypeDef TxHeader;
+		  uint8_t adc_data[2];  // Store ADC value as bytes
+		  uint32_t TxMailbox;
+		  uint8_t can_data[5]; //  data for the can message
+
+		  // Prepare CAN message
+		  TxHeader.StdId = 0x0;  // ID
+		  TxHeader.DLC = 5;  // 8 bytes of data
+		  // Byte 1 Throttle LSB
+		  adc_data[0] = adc_var & 0xFF;  // Low byte
+		  // Byte 2 Throttle MSB
+		  adc_data[1] = (adc_var >> 8) & 0x0F; // High byte
+
+		  // Organizing the CAN array
+		  can_data[0] = TxHeader.StdId;
+		  can_data[1] = adc_data[0];
+		  can_data[2] = adc_data[1];
+
+		  // Transmit over CAN
+		  HAL_CAN_AddTxMessage(&hcan1, &TxHeader, can_data, &TxMailbox);
+	    }
+
+
 	//code sending data over CAN
 
-    osDelay(1);
+    osDelay(10);
   }
   /* USER CODE END StartTask02 */
 }
