@@ -4,6 +4,7 @@
 #define TCAL9538RSVR_ADDR 0b11100000
 #define TCAL9538RSVR_GPIO_INPUT 0x00
 #define TCAL9538RSVR_GPIO_OUTPUT 0x01
+#define TCAL9538RSVR_GPIO_INVERSION 0x02
 #define TCAL9538RSVR_DIR_CONFIG 0x03
 #define TCAL9538RSVR_INT_CONFIG 0x45
 #define TCAL9538RSVR_INT_STATUS 0x46
@@ -33,26 +34,13 @@ private:
 }
 */
 
-uint8_t bitmask_to_pin(uint8_t bitmask) {
-    uint8_t pin_number = 0;
-    if (bitmask == 0) 
-    {
-        return -1;
-    }
-    
-    while ((bitmask & 1) == 0) 
-    {
-        bitmask >>= 1;
-        pin_number++;
-    }
-    
-    return pin_number; 
-}
+
 
 uint8_t TCAL9538RSVR_INIT(TCAL9538RSVR *dev, I2C_HandleTypeDef *i2cHandle, uint8_t hardwareAddress, uint8_t direction_bitMask, uint8_t interrupt_bitMask)
 {
 	uint8_t errNum = 0;
 	HAL_StatusTypeDef status;
+	dev->input = direction_bitMask;
 
 
     dev->i2cHandle = i2cHandle;
@@ -66,7 +54,19 @@ uint8_t TCAL9538RSVR_INIT(TCAL9538RSVR *dev, I2C_HandleTypeDef *i2cHandle, uint8
     status = TCAL9538RSVR_SetDirection(dev, &hold_bitMask);
     errNum += (status != HAL_OK);
 
+//    TCAL9538RSVR_ReadRegister(dev, TCAL9538RSVR_GPIO_INPUT, &hold_bitMask);
+
     status = TCAL9538RSVR_SetInterrupts(dev, interrupt_bitMask);
+    errNum += (status != HAL_OK);
+
+    uint8_t full = 0xFF;
+//    if (direction_bitMask == 0xFF)
+//    {
+//    	status = TCAL9538RSVR_WriteRegister(dev, 0x42, &full);
+//    	errNum += (status != HAL_OK);
+//    }
+
+    status = TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_GPIO_INVERSION, &full);
     errNum += (status != HAL_OK);
 
     return (errNum);
@@ -105,29 +105,28 @@ HAL_StatusTypeDef TCAL9538RSVR_HandleInterrupt(TCAL9538RSVR* dev)
 	HAL_StatusTypeDef status;
     uint8_t triggeredInterrupts = 0;
 
-    // Read updated input values
-    status = TCAL9538RSVR_ReadInput(dev, &dev->portValues);
 
     // read interrupt status register, puts a bit mask of the pin that triggered the interrupt in intPinBitMask
     status = TCAL9538RSVR_ReadRegister(dev, TCAL9538RSVR_INT_STATUS, &triggeredInterrupts);
     errNum += (status != HAL_OK);
 
-    //status = TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_INT_STATUS, &triggeredInterrupts);
-    //errNum += (status != HAL_OK);
+    // Read updated input values
+    status = TCAL9538RSVR_ReadInput(dev, &dev->portValues);
+    uint8_t test1 = 0;
+    TCAL9538RSVR_ReadRegister(dev, 0x45, &test1);
+    uint8_t test2 = 0;
+    TCAL9538RSVR_ReadRegister(dev, 0x46, &test2);
+
+    /*if (dev->input == 0xFF)
+    {
+    	status = TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_INT_STATUS, &triggeredInterrupts);
+    	errNum += (status != HAL_OK);
+    }*/
 
     return (errNum);
 }
 
 
-
-// HAL_StatusTypeDef TCAL9538RSVR_CheckBothInterrupts(TCAL9538RSVR* dev1, TCAL9538RSVR* dev2, uint8_t portPin)
-// {
-//     int8_t pin = 0;
-//     TCAL9538RSVR_HandleInterrupt(dev1, pin);
-//     if (pin == -1)
-//     TCAL9538RSVR_HandleInterrupt(dev2, pin);
-    
-// }
 
 
 HAL_StatusTypeDef TCAL9538RSVR_ReadInput(TCAL9538RSVR* dev, uint8_t *data)
