@@ -37,6 +37,8 @@
 // Returns 0 or 1 if bit at pos in var is set
 #define CHECK_BIT(var,pos) !!((var) & (1<<(pos)))
 
+#define ADC_BUF_LEN 10 // ADC DMA Buffer size
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,6 +48,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan1;
 CAN_HandleTypeDef hcan2;
@@ -107,11 +110,14 @@ uint8_t outputPortState = 0; // variable with state of output port
 uint8_t uart_rx = 0; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
 uint8_t prev_uart_rx = 0; // variable to help with toggle logic
 
+uint16_t adc_buf[ADC_BUF_LEN]; // variable to store ADC DMA Buffers
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_I2C4_Init(void);
 static void MX_CAN1_Init(void);
@@ -226,6 +232,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_I2C4_Init();
   MX_CAN1_Init();
@@ -272,7 +279,7 @@ int main(void)
   ReadIOExpanderHandle = osThreadNew(StartTask03, NULL, &ReadIOExpander_attributes);
 
   /* creation of Outputs_Control */
-  //Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
+  Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -370,12 +377,12 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc1.Init.OversamplingMode = DISABLE;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
@@ -567,6 +574,22 @@ static void MX_UART4_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -679,46 +702,17 @@ void StartTask01(void *argument)
 void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
-  /* Infinite loop */
 
-  //create veraibe, for storing ADC variable
-	uint16_t adc_var;
-  for(;;)
+  uint16_t adc_var[10];
+  uint16_t adc_var_avg = 0;
 
+  // Start ADC with DMA once (do NOT call it inside the loop)
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buf, ADC_BUF_LEN);
+
+  for (;;)
   {
-	//Code for reading ADC values
-	  HAL_ADC_Start(&hadc1);// Wait for conversion to complete
-	  if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK){
-	      // Read ADC value
-		  adc_var = HAL_ADC_GetValue(&hadc1);
-
-
-		  CAN_TxHeaderTypeDef TxHeader;
-		  uint8_t adc_data[2];  // Store ADC value as bytes
-		  uint32_t TxMailbox;
-		  uint8_t can_data[5]; //  data for the can message
-
-		  // Prepare CAN message
-		  TxHeader.StdId = 0x0;  // ID
-		  TxHeader.DLC = 5;  // 8 bytes of data
-		  // Byte 1 Throttle LSB
-		  adc_data[0] = adc_var & 0xFF;  // Low byte
-		  // Byte 2 Throttle MSB
-		  adc_data[1] = (adc_var >> 8) & 0x0F; // High byte
-
-		  // Organizing the CAN array
-		  can_data[0] = TxHeader.StdId;
-		  can_data[1] = adc_data[0];
-		  can_data[2] = adc_data[1];
-
-		  // Transmit over CAN
-		  HAL_CAN_AddTxMessage(&hcan1, &TxHeader, can_data, &TxMailbox);
-	    }
-
-
-	//code sending data over CAN
-
-    osDelay(10);
+    // Wait until the ADC DMA completes
+    osDelay(10); // Adjust delay if necessary
   }
   /* USER CODE END StartTask02 */
 }
@@ -826,6 +820,42 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
   /* USER CODE END Callback 1 */
 }
+/* USER CODE BEGIN ADC CALLBACK */
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+    if (hadc->Instance == ADC1)
+    {
+        uint16_t adc_var_avg = 0;
+
+        // Copy ADC buffer and compute average
+        for (int i = 0; i < ADC_BUF_LEN; i++)
+        {
+            adc_var_avg += adc_buf[i];
+        }
+        adc_var_avg /= ADC_BUF_LEN;
+
+        // Prepare CAN message
+        CAN_TxHeaderTypeDef TxHeader;
+        uint8_t adc_data[2];
+        uint32_t TxMailbox;
+        uint8_t can_data[5];
+
+        TxHeader.StdId = 0x0;
+        TxHeader.DLC = 5;
+
+        adc_data[0] = adc_var_avg & 0xFF;
+        adc_data[1] = (adc_var_avg >> 8) & 0x0F;
+
+        can_data[0] = TxHeader.StdId;
+        can_data[1] = adc_data[0];
+        can_data[2] = adc_data[1];
+
+        // Transmit over CAN
+        // HAL_CAN_AddTxMessage(&hcan1, &TxHeader, can_data, &TxMailbox);
+    }
+}
+/* USER CODE END ADC CALLBACK */
 
 /**
   * @brief  This function is executed in case of error occurrence.
