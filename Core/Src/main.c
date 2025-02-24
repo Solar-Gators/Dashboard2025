@@ -99,7 +99,7 @@ uint16_t CruiseControlSpeed; //need range 0-65,535
 
 static uint8_t GPIO_Interrupt_Triggered;
 
-static uint8_t TxData[8];
+static uint8_t TxData[8] = {};
 
 
 uint8_t outputPortState = 0; // variable with state of output port
@@ -153,36 +153,38 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	 *
 	 */
 
-	uint8_t prev_flag1 = flags[1];
-	uint8_t prev_flag2 = flags[2];
+	static uint8_t prev_input1 = 0;
+	static uint8_t prev_input2 = 0;
 
-	flags[1] = 0;
-	flags[2] = 0;
+
 	flags[3] = 0;
 	flags[4] = 0;
 
-	uint8_t new_flag1 = 0;
-	new_flag1 |= CHECK_BIT(*Input2, 4) << 0; // Main
-	new_flag1 |= CHECK_BIT(*Input2, 5) << 1; // Break
-	new_flag1 |= CHECK_BIT(*Input2, 0) << 2; // Mode
-	new_flag1 |= CHECK_BIT(*Input1, 5) << 3; // MC
-	new_flag1 |= CHECK_BIT(*Input1, 6) << 4; // Array
-	new_flag1 |= CHECK_BIT(*Input1, 4) << 5; // Extra 1
-	new_flag1 |= CHECK_BIT(outputPortState, 5) << 6; // Horn
-	new_flag1 |= CHECK_BIT(outputPortState, 6) << 7; // PTT
-
-	uint8_t new_flag2 = 0;
-	new_flag2 |= CHECK_BIT(outputPortState, 2) << 0; // Blinkers
-	new_flag2 |= CHECK_BIT(outputPortState, 0) << 1; // Left Turn Signal
-	new_flag2 |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
-	new_flag2 |= CHECK_BIT(*Input1, 7) << 2; // Right Turn Signal
 
 	// Detect rising edges for each flag
-	uint8_t risingEdges_flag1 = (~prev_flag1) & new_flag1;
-	uint8_t risingEdges_flag2 = (~prev_flag2) & new_flag2;
+	uint8_t risingEdges_flag1 = (~prev_input1) & *Input1;
+	uint8_t risingEdges_flag2 = (~prev_input2) & *Input2;
 
-	flags[1] = risingEdges_flag1;
-	flags[2] = risingEdges_flag2;
+
+	flags[1] ^= CHECK_BIT(risingEdges_flag2, 4) << 0; // Main
+	flags[1] ^= CHECK_BIT(risingEdges_flag2, 5) << 1; // Break
+	flags[1] ^= CHECK_BIT(risingEdges_flag2, 0) << 2; // Mode
+	flags[1] ^= CHECK_BIT(risingEdges_flag1, 5) << 3; // MC
+	flags[1] ^= CHECK_BIT(risingEdges_flag1, 6) << 4; // Array
+	flags[1] ^= CHECK_BIT(risingEdges_flag1, 4) << 5; // Extra 1
+	flags[1] |= CHECK_BIT(outputPortState, 5) << 6; // Horn
+	flags[1] |= CHECK_BIT(outputPortState, 6) << 7; // PTT
+
+
+	flags[2] |= CHECK_BIT(outputPortState, 2) << 0; // Blinkers
+	flags[2] |= CHECK_BIT(outputPortState, 0) << 1; // Left Turn Signal
+	flags[2] |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
+	flags[2] ^= CHECK_BIT(risingEdges_flag1, 7) << 3; //?
+
+
+
+	prev_input1 = *Input1;
+	prev_input2 = *Input2;
 
 }
 
@@ -201,8 +203,14 @@ uint8_t updateDebounce(uint8_t stable, uint8_t newReading, uint8_t *counter) {
 
 void CruiseControlManagement()
 {
-	// store boolean for cc on or off
-	// -> if off,
+
+	/**
+	 * store boolean for cc on or off
+	 * s
+	 * cc- (cc set)
+	 * cc+ (cc reset)
+	 *
+	 * */
 }
 
 // GPIO Expander Interrupt Handler
@@ -293,7 +301,7 @@ int main(void)
   ReadIOExpanderHandle = osThreadNew(StartTask03, NULL, &ReadIOExpander_attributes);
 
   /* creation of Outputs_Control */
-  Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
+  //Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -687,7 +695,7 @@ void StartTask01(void *argument)
 	//TCAL9538RSVR_SetOutput(&U7, &var);
 	uint8_t val = TxData[1];
 	uint8_t val2 = TxData[2];
-    osDelay(5000);
+    osDelay(500);
   }
   /* USER CODE END 5 */
 }
@@ -705,7 +713,7 @@ void StartTask02(void *argument)
   /* Infinite loop */
 
   //create veraibe, for storing ADC variable
-	uint8_t var;
+  uint8_t var;
   for(;;)
 
   {
@@ -749,15 +757,16 @@ void StartTask03(void *argument)
 	for(;;)
 	{
 	  // Read TCAL Input and update flags
-	  if (GPIO_Interrupt_Triggered && debounce_count++ <= 2)
+	  if (GPIO_Interrupt_Triggered)
 	  {
+		  if (debounce_count++ <= 2) {continue;}
 		  if (TCAL9538RSVR_HandleInterrupt(&U5) != HAL_OK){ Error_Handler(); }
 		  //if (TCAL9538RSVR_HandleInterrupt(&U16) != HAL_OK){ Error_Handler(); }
 
 
 		  Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
-		  uint8_t val = TxData[0];
-		  uint8_t val2 = TxData[1];
+		  uint8_t val = TxData[1];
+		  uint8_t val2 = TxData[2];
 		  GPIO_Interrupt_Triggered = 0;
 		  debounce_count = 0;
 	  }

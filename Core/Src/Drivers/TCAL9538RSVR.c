@@ -112,16 +112,7 @@ HAL_StatusTypeDef TCAL9538RSVR_HandleInterrupt(TCAL9538RSVR* dev)
 
     // Read updated input values
     status = TCAL9538RSVR_ReadInput(dev, &dev->portValues);
-    uint8_t test1 = 0;
-    TCAL9538RSVR_ReadRegister(dev, 0x45, &test1);
-    uint8_t test2 = 0;
-    TCAL9538RSVR_ReadRegister(dev, 0x46, &test2);
 
-    /*if (dev->input == 0xFF)
-    {
-    	status = TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_INT_STATUS, &triggeredInterrupts);
-    	errNum += (status != HAL_OK);
-    }*/
 
     return (errNum);
 }
