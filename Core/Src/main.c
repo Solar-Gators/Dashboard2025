@@ -89,8 +89,6 @@ const osSemaphoreAttr_t CAN_Mutex_attributes = {
 };
 /* USER CODE BEGIN PV */
 
-
-
 TCAL9538RSVR U5; // input 1
 TCAL9538RSVR U16; // input 2
 TCAL9538RSVR U7; // output
@@ -105,6 +103,7 @@ static uint8_t TxData[8] = {};
 uint8_t outputPortState = 0; // variable with state of output port
 uint8_t uart_rx = 0; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
 uint8_t prev_uart_rx = 0; // variable to help with toggle logic
+LightState lightState = LIGHTS_NONE;
 
 /* USER CODE END PV */
 
@@ -261,8 +260,10 @@ int main(void)
   //if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b00111111, 0b11000000) != HAL_OK) { Error_Handler(); }
   if (TCAL9538RSVR_INIT(&U7, &hi2c4, 0x00, 0b00000000, 0b00000000) != HAL_OK) { Error_Handler(); } // output
 
-  HAL_CAN_Start(&hcan1);
+  // set outputs to low to start
+  TCAL9538RSVR_SetOutput(&U7, &outputPortState);
 
+  HAL_CAN_Start(&hcan1);
 
   HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enables uart interrupt, it will call the interrupt when one byte is recieved
   /* USER CODE END 2 */
@@ -301,7 +302,7 @@ int main(void)
   ReadIOExpanderHandle = osThreadNew(StartTask03, NULL, &ReadIOExpander_attributes);
 
   /* creation of Outputs_Control */
-  //Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
+  Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -638,35 +639,65 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  // code for handling the data received over uart
-  if(huart->Instance == UART4)
-  {
-    /*
-    uint8_t new_presses = uart_rx & ~prev_uart_rx; // bit mask of what buttons were pressed since last time
-    if (new_presses & BUTTON_LEFT_TURN) {
-      if (outputPortState & OUTPUT_FL_LIGHT_CTRL) {
-        outputPortState &= ~OUTPUT_FL_LIGHT_CTRL;
-      } else {
-        outputPortState |= OUTPUT_FL_LIGHT_CTRL;
-        outputPortState &= ~OUTPUT_FR_LIGHT_CTRL;
-      }
-    }
-    if (new_presses & BUTTON_RIGHT_TURN) {
-      if (outputPortState & OUTPUT_FR_LIGHT_CTRL) {
-        outputPortState &= ~OUTPUT_FR_LIGHT_CTRL;
-      } else {
-        outputPortState |= OUTPUT_FR_LIGHT_CTRL;
-        outputPortState &= ~OUTPUT_FL_LIGHT_CTRL;
-      }
-    }
-    if (new_presses & BUTTON_HAZARD) {
-      outputPortState ^= (OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
-    }
-    if (new_presses & BUTTON_HEADLIGHTS) {
-      outputPortState ^= (OUTPUT_L_HEAD_CTRL | OUTPUT_R_HEAD_CTRL);
-    }
-    */
 
+  if (huart->Instance == UART4)
+  {
+    uint8_t new_presses = uart_rx & ~prev_uart_rx;
+
+    // if left turn button was pressed
+    if (new_presses & BUTTON_LEFT_TURN)
+    {
+      if (lightState == LIGHTS_LEFT)
+        lightState = LIGHTS_NONE;
+      else
+        lightState = LIGHTS_LEFT;
+    }
+
+    // if right turn button was pressed
+    if (new_presses & BUTTON_RIGHT_TURN)
+    {
+      if (lightState == LIGHTS_RIGHT)
+        lightState = LIGHTS_NONE;
+      else
+        lightState = LIGHTS_RIGHT;
+    }
+
+    // if hazard button was pressed
+    if (new_presses & BUTTON_HAZARD)
+    {
+      if (lightState == LIGHTS_HAZARD)
+        lightState = LIGHTS_NONE;
+      else
+        lightState = LIGHTS_HAZARD;
+    }
+
+    // if headlight button was pressed
+    if (new_presses & BUTTON_HEADLIGHTS)
+    {
+      // toggle headlight state
+      outputPortState ^= OUTPUT_R_HEAD_CTRL;
+      outputPortState ^= OUTPUT_L_HEAD_CTRL;
+    }
+
+    // if display button was pressed, (I think this is toggle)
+    if (new_presses & BUTTON_DISPLAY)
+    {
+      // toggle display state
+      outputPortState ^= OUTPUT_FL_LIGHT_CTRL;
+      outputPortState ^= OUTPUT_FR_LIGHT_CTRL;
+    }
+
+    // if horn button is being pressed currently
+    if (uart_rx & BUTTON_HORN)
+      outputPortState |= OUTPUT_HORN_CTRL;
+    else
+      outputPortState &= ~OUTPUT_HORN_CTRL;
+
+    // if PTT button is being pressed currently
+    /*
+    TODO: Some code with PTT button (does this just go over can what even is PTT)
+    TODO: Some code with Fan (where does fan come from) 
+    */
 
 
     prev_uart_rx = uart_rx;
@@ -792,18 +823,39 @@ void StartTask03(void *argument)
 void StartTask04(void *argument)
 {
   /* USER CODE BEGIN StartTask04 */
+
+  uint32_t lastBlinkTime = HAL_GetTick();
+  const uint32_t blinkInterval = 500;
+
   /* Infinite loop */
   for(;;)
   {
 
-    // outputPortState needs to be updated somewhere here / in a uart interrupt
+    // blinking logic needs to be done here now
+    // use lightState variable to see what should be turned on and then 
+    // update outputPortState
+
+    uint32_t currentTick = HAL_GetTick();
+
+    if (currentTick - lastBlinkTime > blinkInterval)
+    {
+      lastBlinkTime = currentTick;
+      if (lightState == LIGHTS_LEFT)
+        outputPortState ^= OUTPUT_FL_LIGHT_CTRL;
+      else if (lightState == LIGHTS_RIGHT)
+        outputPortState ^= OUTPUT_FR_LIGHT_CTRL;
+      else if (lightState == LIGHTS_HAZARD)
+        outputPortState ^= (OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
+      else if (lightState == LIGHTS_NONE)
+        outputPortState &= ~(OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
+    }
 
     if(TCAL9538RSVR_SetOutput(&U7, &outputPortState) != HAL_OK)
     {
     	Error_Handler();
     }
 
-    osDelay(50);
+    osDelay(1);
   }
   /* USER CODE END StartTask04 */
 }

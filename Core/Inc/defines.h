@@ -15,9 +15,17 @@
 // Bit masks of bits in the output ports from the expander
 #define OUTPUT_HORN_CTRL        (1 << 0) // P0
 #define OUTPUT_FAN_CTRL         (1 << 1) // P1
-#define OUTPUT_R_HEAD_CTRL      (1 << 2) // P2
-#define OUTPUT_L_HEAD_CTRL      (1 << 3) // P3
+#define OUTPUT_R_HEAD_CTRL      (1 << 3) // P2
+#define OUTPUT_L_HEAD_CTRL      (1 << 2) // P3
 #define OUTPUT_FL_LIGHT_CTRL    (1 << 4) // P4
 #define OUTPUT_FR_LIGHT_CTRL    (1 << 5) // P5
+
+// Enum for state of lights
+typedef enum {
+    LIGHTS_NONE = 0,
+    LIGHTS_LEFT = 1,
+    LIGHTS_RIGHT = 2,
+    LIGHTS_HAZARD = 3
+} LightState;
 
 #endif // DASHBOARD_DEFINES_H
