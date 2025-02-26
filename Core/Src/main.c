@@ -111,6 +111,7 @@ uint8_t uart_rx = 0; // variable for holding the recieved data over uart from st
 uint8_t prev_uart_rx = 0; // variable to help with toggle logic
 
 uint16_t adc_buf[ADC_BUF_LEN]; // variable to store ADC DMA Buffers
+volatile uint8_t dma_flag = 0; // flag for DMA start and stop
 
 /* USER CODE END PV */
 
@@ -706,8 +707,40 @@ void StartTask02(void *argument)
   uint16_t adc_var[10];
   uint16_t adc_var_avg = 0;
 
-  // Start ADC with DMA once (do NOT call it inside the loop)
+  // Start ADC with DMA
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buf, ADC_BUF_LEN);
+  // Start ADC with DMA
+  while (!(dma_flag));
+
+  // Stop ADC with DMA
+  HAL_ADC_Stop_DMA(&hadc1);
+  dma_flag = 0;
+  // Copy ADC buffer and compute average
+  for (int i = 0; i < ADC_BUF_LEN; i++)
+  {
+      adc_var_avg += adc_buf[i];
+  }
+  adc_var_avg /= ADC_BUF_LEN;
+
+  // Prepare CAN message
+  CAN_TxHeaderTypeDef TxHeader;
+  uint8_t adc_data[2];
+  uint32_t TxMailbox;
+  uint8_t can_data[5];
+
+  TxHeader.StdId = 0x0;
+  TxHeader.DLC = 5;
+
+  adc_data[0] = adc_var_avg & 0xFF;
+  adc_data[1] = (adc_var_avg >> 8) & 0x0F;
+
+  can_data[0] = TxHeader.StdId;
+  can_data[1] = adc_data[0];
+  can_data[2] = adc_data[1];
+
+  // Transmit over CAN
+  // HAL_CAN_AddTxMessage(&hcan1, &TxHeader, can_data, &TxMailbox);
+
 
   for (;;)
   {
@@ -826,33 +859,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
     if (hadc->Instance == ADC1)
     {
-        uint16_t adc_var_avg = 0;
-
-        // Copy ADC buffer and compute average
-        for (int i = 0; i < ADC_BUF_LEN; i++)
-        {
-            adc_var_avg += adc_buf[i];
-        }
-        adc_var_avg /= ADC_BUF_LEN;
-
-        // Prepare CAN message
-        CAN_TxHeaderTypeDef TxHeader;
-        uint8_t adc_data[2];
-        uint32_t TxMailbox;
-        uint8_t can_data[5];
-
-        TxHeader.StdId = 0x0;
-        TxHeader.DLC = 5;
-
-        adc_data[0] = adc_var_avg & 0xFF;
-        adc_data[1] = (adc_var_avg >> 8) & 0x0F;
-
-        can_data[0] = TxHeader.StdId;
-        can_data[1] = adc_data[0];
-        can_data[2] = adc_data[1];
-
-        // Transmit over CAN
-        // HAL_CAN_AddTxMessage(&hcan1, &TxHeader, can_data, &TxMailbox);
+    	dma_flag = 1;
     }
 }
 /* USER CODE END ADC CALLBACK */
