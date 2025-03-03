@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "TCAL9538RSVR.h"
 #include "defines.h"
+//#include "sg_can.hpp"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -172,13 +173,13 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 5) << 3; // MC
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 6) << 4; // Array
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 4) << 5; // Extra 1
-	flags[1] |= CHECK_BIT(outputPortState, 5) << 6; // Horn
-	flags[1] |= CHECK_BIT(outputPortState, 6) << 7; // PTT
+	//flags[1] |= CHECK_BIT(outputPortState, 5) << 6; // Horn
+	//flags[1] |= CHECK_BIT(outputPortState, 6) << 7; // PTT (push to talk)
 
 
-	flags[2] |= CHECK_BIT(outputPortState, 2) << 0; // Blinkers
-	flags[2] |= CHECK_BIT(outputPortState, 0) << 1; // Left Turn Signal
-	flags[2] |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
+	//flags[2] |= CHECK_BIT(outputPortState, 2) << 0; // Blinkers
+	//flags[2] |= CHECK_BIT(outputPortState, 0) << 1; // Left Turn Signal
+	//flags[2] |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
 	flags[2] ^= CHECK_BIT(risingEdges_flag1, 7) << 3; //?
 
 
@@ -186,19 +187,6 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	prev_input1 = *Input1;
 	prev_input2 = *Input2;
 
-}
-
-uint8_t updateDebounce(uint8_t stable, uint8_t newReading, uint8_t *counter) {
-    if (newReading != stable) {
-        (*counter)++;
-        if (*counter >= 3) {
-            *counter = 0;
-            return newReading;
-        }
-    } else {
-        *counter = 0;
-    }
-    return stable;
 }
 
 void CruiseControlManagement()
@@ -209,6 +197,8 @@ void CruiseControlManagement()
 	 * s
 	 * cc- (cc set)
 	 * cc+ (cc reset)
+	 *
+	 * lock in val (turn on off)
 	 *
 	 * */
 }
@@ -454,10 +444,10 @@ static void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 16;
+  hcan1.Init.Prescaler = 2;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_2TQ;
   hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
@@ -491,10 +481,10 @@ static void MX_CAN2_Init(void)
 
   /* USER CODE END CAN2_Init 1 */
   hcan2.Instance = CAN2;
-  hcan2.Init.Prescaler = 16;
+  hcan2.Init.Prescaler = 2;
   hcan2.Init.Mode = CAN_MODE_NORMAL;
   hcan2.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan2.Init.TimeSeg1 = CAN_BS1_1TQ;
+  hcan2.Init.TimeSeg1 = CAN_BS1_2TQ;
   hcan2.Init.TimeSeg2 = CAN_BS2_1TQ;
   hcan2.Init.TimeTriggeredMode = DISABLE;
   hcan2.Init.AutoBusOff = DISABLE;
@@ -739,13 +729,15 @@ void StartTask03(void *argument)
   /* USER CODE BEGIN StartTask03 */
 
 	int debounce_count = 0;
+	int HAL_CAN_BUSY = 0;
+	uint64_t messages_sent = 0;
 
 	CAN_TxHeaderTypeDef TxHeader;
 	//uint8_t TxData[8] = { 0 };
-	uint32_t TxMailbox;
+	uint32_t TxMailbox = { 0 };
 
 	TxHeader.IDE = CAN_ID_STD; // Standard ID (not extended)
-	TxHeader.StdId = 0x3FF; // 11 bit Identifier !!Change!!
+	TxHeader.StdId = 0x7FF; // 11 bit Identifier !!Change!!
 	TxHeader.RTR = CAN_RTR_DATA; // Std RTR Data frame
 	TxHeader.DLC = 8; // 8 bytes being transmitted
 
@@ -773,10 +765,17 @@ void StartTask03(void *argument)
 
 	  // Send CAN messages
 //	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
-//	  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-//	  {
-//		  Error_Handler();
-//	  }
+	  HAL_StatusTypeDef status;
+	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+	  messages_sent++;
+	  if (status == HAL_ERROR)
+	  {
+		  Error_Handler();
+	  }
+	  else if (status == HAL_BUSY)
+	  {
+		  HAL_CAN_BUSY++;
+	  }
 	  osDelay(1);
   }
   /* USER CODE END StartTask03 */

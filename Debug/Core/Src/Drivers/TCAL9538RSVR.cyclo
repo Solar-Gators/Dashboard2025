@@ -2,7 +2,7 @@
 ../Core/Src/Drivers/TCAL9538RSVR.c:82:19:TCAL9538RSVR_SetDirection	1
 ../Core/Src/Drivers/TCAL9538RSVR.c:92:19:TCAL9538RSVR_SetInterrupts	1
 ../Core/Src/Drivers/TCAL9538RSVR.c:102:19:TCAL9538RSVR_HandleInterrupt	1
-../Core/Src/Drivers/TCAL9538RSVR.c:132:19:TCAL9538RSVR_ReadInput	1
-../Core/Src/Drivers/TCAL9538RSVR.c:136:19:TCAL9538RSVR_SetOutput	1
-../Core/Src/Drivers/TCAL9538RSVR.c:142:19:TCAL9538RSVR_ReadRegister	1
-../Core/Src/Drivers/TCAL9538RSVR.c:146:19:TCAL9538RSVR_WriteRegister	1
+../Core/Src/Drivers/TCAL9538RSVR.c:123:19:TCAL9538RSVR_ReadInput	1
+../Core/Src/Drivers/TCAL9538RSVR.c:127:19:TCAL9538RSVR_SetOutput	1
+../Core/Src/Drivers/TCAL9538RSVR.c:133:19:TCAL9538RSVR_ReadRegister	1
+../Core/Src/Drivers/TCAL9538RSVR.c:137:19:TCAL9538RSVR_WriteRegister	1
