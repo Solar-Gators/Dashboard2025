@@ -54,20 +54,14 @@ uint8_t TCAL9538RSVR_INIT(TCAL9538RSVR *dev, I2C_HandleTypeDef *i2cHandle, uint8
     status = TCAL9538RSVR_SetDirection(dev, &hold_bitMask);
     errNum += (status != HAL_OK);
 
-//    TCAL9538RSVR_ReadRegister(dev, TCAL9538RSVR_GPIO_INPUT, &hold_bitMask);
-
     status = TCAL9538RSVR_SetInterrupts(dev, interrupt_bitMask);
     errNum += (status != HAL_OK);
 
-    uint8_t full = 0xFF;
-//    if (direction_bitMask == 0xFF)
-//    {
-//    	status = TCAL9538RSVR_WriteRegister(dev, 0x42, &full);
-//    	errNum += (status != HAL_OK);
-//    }
-
-    status = TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_GPIO_INVERSION, &full);
-    errNum += (status != HAL_OK);
+    if (direction_bitMask == 0xFF) {
+        uint8_t full = 0xFF;
+        status = TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_GPIO_INVERSION, &full);
+        errNum += (status != HAL_OK);
+    }
 
     return (errNum);
 }
