@@ -100,6 +100,8 @@ TCAL9538RSVR U7; // output
 static uint8_t GPIO_Interrupt_Triggered;
 
 
+static uint8_t cc_enable = 0;
+
 
 uint8_t outputPortState = 0; // variable with state of output port
 uint8_t uart_rx = 0; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
@@ -826,7 +828,23 @@ void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
 
-  uint16_t adc_var_avg = 0;
+	uint16_t adc_var_avg = 0;
+
+	int HAL_CAN_BUSY = 0;
+	uint64_t messages_sent = 0;
+
+	CAN_TxHeaderTypeDef TxHeader;
+	uint8_t TxData[8] = { 0 };
+	uint32_t TxMailbox = { 0 };
+
+	TxHeader.IDE = CAN_ID_STD; // Standard ID (not extended)
+	TxHeader.StdId = 0x0; // 11 bit Identifier
+	TxHeader.RTR = CAN_RTR_DATA; // Std RTR Data frame
+	TxHeader.DLC = 8; // 8 bytes being transmitted
+	TxData[0] = 1;
+
+	Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
+
 
   // Start ADC with DMA
 
@@ -835,20 +853,14 @@ void StartTask02(void *argument)
   CAN_TxHeaderTypeDef TxHeader;
   uint8_t adc_data[2];
   uint32_t TxMailbox;
-  uint8_t can_data[5];
+  uint8_t can_data[8];
 
   TxHeader.StdId = 0x0;
-  TxHeader.DLC = 5;
+  TxHeader.DLC = 8;
 
-  adc_data[0] = adc_var_avg & 0xFF;
-  adc_data[1] = (adc_var_avg >> 8) & 0x0F;
-
-  can_data[0] = TxHeader.StdId;
-  can_data[1] = adc_data[0];
-  can_data[2] = adc_data[1];
 
   // Transmit over CAN
-  // HAL_CAN_AddTxMessage(&hcan1, &TxHeader, can_data, &TxMailbox);
+  HAL_CAN_AddTxMessage(&hcan1, &TxHeader, can_data, &TxMailbox);
 
 
   for (;;)
@@ -867,8 +879,30 @@ void StartTask02(void *argument)
 		adc_var_avg += adc_buf[i];
 	}
 	adc_var_avg /= ADC_BUF_LEN;
+
+	adc_data[0] = adc_var_avg & 0xFF;
+	adc_data[1] = (adc_var_avg >> 8) & 0x0F;
+
+
+	can_data[0] = TxHeader.StdId;
+	can_data[1] = adc_data[0];
+	can_data[2] = adc_data[1];
+	Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
     // Wait until the ADC DMA completes
-    osDelay(10); // Adjust delay if necessary
+	  // Send CAN messages
+//	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+	  HAL_StatusTypeDef status;
+	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+	  messages_sent++;
+	  if (status == HAL_ERROR)
+	  {
+		  Error_Handler();
+	  }
+	  else if (status == HAL_BUSY)
+	  {
+		  HAL_CAN_BUSY++;
+	  }
+    osDelay(1);
   }
   /* USER CODE END StartTask02 */
 }
