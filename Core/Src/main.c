@@ -94,8 +94,6 @@ TCAL9538RSVR U5; // input 1
 TCAL9538RSVR U16; // input 2
 TCAL9538RSVR U7; // output
 
-uint16_t CruiseControlSpeed; //need range 0-65,535
-
 static uint8_t GPIO_Interrupt_Triggered;
 
 
@@ -781,8 +779,6 @@ void StartTask03(void *argument)
 
 
 		  Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
-		  uint8_t val = TxData[1];
-		  uint8_t val2 = TxData[2];
 		  GPIO_Interrupt_Triggered = 0;
 		  debounce_count = 0;
 	  }
