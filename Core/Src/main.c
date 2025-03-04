@@ -100,7 +100,6 @@ uint16_t CruiseControlSpeed; //need range 0-65,535
 
 static uint8_t GPIO_Interrupt_Triggered;
 
-static uint8_t TxData[8] = {};
 
 
 uint8_t outputPortState = 0; // variable with state of output port
@@ -285,13 +284,13 @@ int main(void)
   HeartBeatHandle = osThreadNew(StartTask01, NULL, &HeartBeat_attributes);
 
   /* creation of Critical_Inputs */
-  //Critical_InputsHandle = osThreadNew(StartTask02, NULL, &Critical_Inputs_attributes);
+  Critical_InputsHandle = osThreadNew(StartTask02, NULL, &Critical_Inputs_attributes);
 
   /* creation of ReadIOExpander */
   ReadIOExpanderHandle = osThreadNew(StartTask03, NULL, &ReadIOExpander_attributes);
 
   /* creation of Outputs_Control */
-  //Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
+  Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -677,14 +676,9 @@ void StartTask01(void *argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
-	//uint8_t var = 0b11111111;
   for(;;)
   {
-	HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
-	//var = ~var;
-	//TCAL9538RSVR_SetOutput(&U7, &var);
-	uint8_t val = TxData[1];
-	uint8_t val2 = TxData[2];
+	  HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
     osDelay(500);
   }
   /* USER CODE END 5 */
@@ -733,17 +727,16 @@ void StartTask03(void *argument)
 	uint64_t messages_sent = 0;
 
 	CAN_TxHeaderTypeDef TxHeader;
-	//uint8_t TxData[8] = { 0 };
+	uint8_t TxData[8] = { 0 };
 	uint32_t TxMailbox = { 0 };
 
 	TxHeader.IDE = CAN_ID_STD; // Standard ID (not extended)
 	TxHeader.StdId = 0x7FF; // 11 bit Identifier !!Change!!
 	TxHeader.RTR = CAN_RTR_DATA; // Std RTR Data frame
 	TxHeader.DLC = 8; // 8 bytes being transmitted
+	TxData[0] = 1;
 
 	Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
-	//stableInput1 = U5.portValues;
-	//stableInput2 = U16.portValues;
 
 	/* Infinite loop */
 	for(;;)
