@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ../Core/Src/stm32l4xx_hal_msp.c:64:6:HAL_MspInit	1
 ../Core/Src/stm32l4xx_hal_msp.c:89:6:HAL_ADC_MspInit	3
 ../Core/Src/stm32l4xx_hal_msp.c:134:6:HAL_ADC_MspDeInit	2
@@ -7,3 +8,14 @@
 ../Core/Src/stm32l4xx_hal_msp.c:346:6:HAL_I2C_MspDeInit	2
 ../Core/Src/stm32l4xx_hal_msp.c:377:6:HAL_UART_MspInit	3
 ../Core/Src/stm32l4xx_hal_msp.c:428:6:HAL_UART_MspDeInit	2
+=======
+../Core/Src/stm32l4xx_hal_msp.c:65:6:HAL_MspInit	1
+../Core/Src/stm32l4xx_hal_msp.c:90:6:HAL_ADC_MspInit	4
+../Core/Src/stm32l4xx_hal_msp.c:153:6:HAL_ADC_MspDeInit	2
+../Core/Src/stm32l4xx_hal_msp.c:185:6:HAL_CAN_MspInit	5
+../Core/Src/stm32l4xx_hal_msp.c:259:6:HAL_CAN_MspDeInit	5
+../Core/Src/stm32l4xx_hal_msp.c:313:6:HAL_I2C_MspInit	3
+../Core/Src/stm32l4xx_hal_msp.c:360:6:HAL_I2C_MspDeInit	2
+../Core/Src/stm32l4xx_hal_msp.c:391:6:HAL_UART_MspInit	3
+../Core/Src/stm32l4xx_hal_msp.c:442:6:HAL_UART_MspDeInit	2
+>>>>>>> remotes/origin/jayce_working

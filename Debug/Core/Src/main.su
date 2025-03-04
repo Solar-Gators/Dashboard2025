@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ../Core/Src/main.c:130:6:Update_CAN_Message1	32	static
 ../Core/Src/main.c:190:6:CruiseControlManagement	4	static
 ../Core/Src/main.c:205:6:HAL_GPIO_EXTI_Callback	16	static
@@ -16,3 +17,26 @@
 ../Core/Src/main.c:815:6:StartTask04	32	static
 ../Core/Src/main.c:863:6:HAL_TIM_PeriodElapsedCallback	16	static
 ../Core/Src/main.c:880:6:Error_Handler	4	static,ignoring_inline_asm
+=======
+../Core/Src/main.c:139:6:Update_CAN_Message1	24	static
+../Core/Src/main.c:182:9:updateDebounce	16	static
+../Core/Src/main.c:195:6:CruiseControlManagement	4	static
+../Core/Src/main.c:201:6:HAL_GPIO_EXTI_Callback	16	static
+../Core/Src/main.c:211:5:main	24	static
+../Core/Src/main.c:313:6:SystemClock_Config	96	static
+../Core/Src/main.c:358:13:MX_ADC1_Init	48	static
+../Core/Src/main.c:497:13:MX_CAN1_Init	8	static
+../Core/Src/main.c:534:13:MX_CAN2_Init	8	static
+../Core/Src/main.c:571:13:MX_I2C4_Init	8	static
+../Core/Src/main.c:619:13:MX_UART4_Init	8	static
+../Core/Src/main.c:652:13:MX_DMA_Init	16	static
+../Core/Src/main.c:670:13:MX_GPIO_Init	40	static
+../Core/Src/main.c:706:6:HAL_UART_RxCpltCallback	16	static
+../Core/Src/main.c:753:6:StartTask01	24	static
+../Core/Src/main.c:770:6:HAL_ADC_ConvCpltCallback	16	static
+../Core/Src/main.c:781:6:StartTask02	64	static
+../Core/Src/main.c:839:6:StartTask03	56	static
+../Core/Src/main.c:896:6:StartTask04	16	static
+../Core/Src/main.c:925:6:HAL_TIM_PeriodElapsedCallback	16	static
+../Core/Src/main.c:942:6:Error_Handler	4	static,ignoring_inline_asm
+>>>>>>> remotes/origin/jayce_working

@@ -16,7 +16,7 @@ OBJS += \
 
 # Each subdirectory must supply rules for building sources it contributes
 Core/Startup/%.o: ../Core/Startup/%.s Core/Startup/subdir.mk
-	arm-none-eabi-gcc -mcpu=cortex-m4 -g3 -DDEBUG -c -I"/home/jackb/Documents/UniversityofFlorida/SolarGators/stm32cubeide_projects/Dashboard2025/Core/Src/Drivers" -I"/home/jackb/Documents/UniversityofFlorida/SolarGators/stm32cubeide_projects/Dashboard2025/Core/Inc/Drivers" -x assembler-with-cpp -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@" "$<"
+	arm-none-eabi-gcc -mcpu=cortex-m4 -g3 -DDEBUG -c -I"C:/Users/Jayce/Documents/SolarGators/stm32projects/Dashboard2025/Core/Src/Drivers" -I"C:/Users/Jayce/Documents/SolarGators/stm32projects/Dashboard2025/Core/Inc/Drivers" -x assembler-with-cpp -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@" "$<"
 
 clean: clean-Core-2f-Startup
 

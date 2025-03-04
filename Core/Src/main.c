@@ -38,6 +38,8 @@
 // Returns 0 or 1 if bit at pos in var is set
 #define CHECK_BIT(var,pos) !!((var) & (1<<(pos)))
 
+#define ADC_BUF_LEN 10 // ADC DMA Buffer size
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,6 +49,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan1;
 CAN_HandleTypeDef hcan2;
@@ -103,11 +106,15 @@ uint8_t uart_rx = 0; // variable for holding the recieved data over uart from st
 uint8_t prev_uart_rx = 0; // variable to help with toggle logic
 LightState lightState = LIGHTS_NONE;
 
+uint16_t adc_buf[ADC_BUF_LEN]; // variable to store ADC DMA Buffers
+volatile uint8_t dma_flag = 0; // flag for DMA start and stop
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_I2C4_Init(void);
 static void MX_CAN1_Init(void);
@@ -235,6 +242,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_I2C4_Init();
   MX_CAN1_Init();
@@ -252,7 +260,7 @@ int main(void)
 
   HAL_CAN_Start(&hcan1);
 
-  HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enables uart interrupt, it will call the interrupt when one byte is recieved
+  //HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enables uart interrupt, it will call the interrupt when one byte is recieved
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -384,11 +392,11 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
-  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.NbrOfConversion = 10;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -416,6 +424,78 @@ static void MX_ADC1_Init(void)
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_4;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_6;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_7;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_8;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_9;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_10;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -584,6 +664,22 @@ static void MX_UART4_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -714,6 +810,12 @@ void StartTask01(void *argument)
 }
 
 /* USER CODE BEGIN Header_StartTask02 */
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
+	dma_flag = 1;
+}
+
+
 /**
 * @brief Function implementing the Critical_Inputs thread.
 * @param argument: Not used
@@ -723,19 +825,50 @@ void StartTask01(void *argument)
 void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
-  /* Infinite loop */
 
-  //create veraibe, for storing ADC variable
-  uint8_t var;
-  for(;;)
+  uint16_t adc_var_avg = 0;
 
+  // Start ADC with DMA
+
+
+  // Prepare CAN message
+  CAN_TxHeaderTypeDef TxHeader;
+  uint8_t adc_data[2];
+  uint32_t TxMailbox;
+  uint8_t can_data[5];
+
+  TxHeader.StdId = 0x0;
+  TxHeader.DLC = 5;
+
+  adc_data[0] = adc_var_avg & 0xFF;
+  adc_data[1] = (adc_var_avg >> 8) & 0x0F;
+
+  can_data[0] = TxHeader.StdId;
+  can_data[1] = adc_data[0];
+  can_data[2] = adc_data[1];
+
+  // Transmit over CAN
+  // HAL_CAN_AddTxMessage(&hcan1, &TxHeader, can_data, &TxMailbox);
+
+
+  for (;;)
   {
-	//Code for reading ADC values
 
-	  //TCAL9538RSVR_ReadInput(&U5, &var);
-	//code sending data over CAN
+	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buf, ADC_BUF_LEN);
+	// Start ADC with DMA
+	while (!(dma_flag));
 
-    osDelay(1);
+	// Stop ADC with DMA
+	HAL_ADC_Stop_DMA(&hadc1);
+	dma_flag = 0;
+	// Copy ADC buffer and compute average
+	for (int i = 0; i < ADC_BUF_LEN; i++)
+	{
+		adc_var_avg += adc_buf[i];
+	}
+	adc_var_avg /= ADC_BUF_LEN;
+    // Wait until the ADC DMA completes
+    osDelay(10); // Adjust delay if necessary
   }
   /* USER CODE END StartTask02 */
 }
@@ -847,6 +980,8 @@ void StartTask04(void *argument)
   }
   /* USER CODE END StartTask04 */
 }
+
+
 
 /**
   * @brief  Period elapsed callback in non blocking mode
