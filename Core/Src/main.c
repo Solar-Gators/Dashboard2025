@@ -187,7 +187,7 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	//flags[2] |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
 	flags[2] ^= CHECK_BIT(risingEdges_flag1, 7) << 3; //?
 
-
+	cc_enable ^= CHECK_BIT(risingEdges_flag2, 1);
 
 	prev_input1 = *Input1;
 	prev_input2 = *Input2;
@@ -252,13 +252,11 @@ int main(void)
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
   if (TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0xFF, 0x00) != HAL_OK) { Error_Handler(); } // inputs
-  uint8_t reg_read_hold;
-  TCAL9538RSVR_ReadRegister(&U5, 0x45, &reg_read_hold);
   //if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b00111111, 0b11000000) != HAL_OK) { Error_Handler(); }
   if (TCAL9538RSVR_INIT(&U7, &hi2c4, 0x00, 0b00000000, 0b00000000) != HAL_OK) { Error_Handler(); } // output
 
   // set outputs to low to start
-  TCAL9538RSVR_SetOutput(&U7, &outputPortState);
+  //TCAL9538RSVR_SetOutput(&U7, &outputPortState);
 
   HAL_CAN_Start(&hcan1);
 
@@ -832,6 +830,7 @@ void StartTask02(void *argument)
 
 	int HAL_CAN_BUSY = 0;
 	uint64_t messages_sent = 0;
+	static uint8_t update_cc = 0;
 
 	CAN_TxHeaderTypeDef TxHeader;
 	uint8_t TxData[8] = { 0 };
@@ -843,24 +842,14 @@ void StartTask02(void *argument)
 	TxHeader.DLC = 8; // 8 bytes being transmitted
 	TxData[0] = 1;
 
-	Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
+
+	// Start ADC with DMA
+	uint8_t adc_data[2];
 
 
-  // Start ADC with DMA
 
-
-  // Prepare CAN message
-  CAN_TxHeaderTypeDef TxHeader;
-  uint8_t adc_data[2];
-  uint32_t TxMailbox;
-  uint8_t can_data[8];
-
-  TxHeader.StdId = 0x0;
-  TxHeader.DLC = 8;
-
-
-  // Transmit over CAN
-  HAL_CAN_AddTxMessage(&hcan1, &TxHeader, can_data, &TxMailbox);
+  	  // Transmit over CAN
+  	  HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 
 
   for (;;)
@@ -883,14 +872,30 @@ void StartTask02(void *argument)
 	adc_data[0] = adc_var_avg & 0xFF;
 	adc_data[1] = (adc_var_avg >> 8) & 0x0F;
 
+	if (cc_enable)
+	{
+		if (update_cc)
+		{
+			TxData[5] = adc_data[0];
+			TxData[6] = adc_data[1];
+			update_cc = 0;
+		}
+	}
+	else
+	{
+		TxData[5] = 0;
+		TxData[6] = 0;
+		update_cc = 1;
+	}
 
-	can_data[0] = TxHeader.StdId;
-	can_data[1] = adc_data[0];
-	can_data[2] = adc_data[1];
-	Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
+
+	TxData[0] = 0;
+	TxData[1] = adc_data[0];
+	TxData[2] = adc_data[1];
+	//Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
     // Wait until the ADC DMA completes
 	  // Send CAN messages
-//	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
 	  HAL_StatusTypeDef status;
 	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 	  messages_sent++;
@@ -951,7 +956,7 @@ void StartTask03(void *argument)
 	  }
 
 	  // Send CAN messages
-//	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
 	  HAL_StatusTypeDef status;
 	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 	  messages_sent++;
@@ -1014,8 +1019,6 @@ void StartTask04(void *argument)
   }
   /* USER CODE END StartTask04 */
 }
-
-
 
 /**
   * @brief  Period elapsed callback in non blocking mode
