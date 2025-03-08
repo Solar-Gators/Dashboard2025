@@ -256,7 +256,7 @@ int main(void)
   if (TCAL9538RSVR_INIT(&U7, &hi2c4, 0x00, 0b00000000, 0b00000000) != HAL_OK) { Error_Handler(); } // output
 
   // set outputs to low to start
-  //TCAL9538RSVR_SetOutput(&U7, &outputPortState);
+  TCAL9538RSVR_SetOutput(&U7, &outputPortState);
 
   HAL_CAN_Start(&hcan1);
 
@@ -862,12 +862,14 @@ void StartTask02(void *argument)
 	// Stop ADC with DMA
 	HAL_ADC_Stop_DMA(&hadc1);
 	dma_flag = 0;
+	adc_var_avg = 0;
 	// Copy ADC buffer and compute average
 	for (int i = 0; i < ADC_BUF_LEN; i++)
 	{
 		adc_var_avg += adc_buf[i];
 	}
 	adc_var_avg /= ADC_BUF_LEN;
+
 
 	adc_data[0] = adc_var_avg & 0xFF;
 	adc_data[1] = (adc_var_avg >> 8) & 0x0F;
