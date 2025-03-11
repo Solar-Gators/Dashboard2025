@@ -100,10 +100,10 @@ static uint8_t GPIO_Interrupt_Triggered;
 static uint8_t TxData[8] = {};
 
 
-uint8_t outputPortState = 0; // variable with state of output port
+uint8_t outputPortState = 0b00000000; // variable with state of output port
 uint8_t uart_rx = 0; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
 uint8_t prev_uart_rx = 0; // variable to help with toggle logic
-LightState lightState = LIGHTS_NONE;
+LightState lightState = LIGHTS_NONE; 
 
 /* USER CODE END PV */
 
@@ -261,7 +261,8 @@ int main(void)
   if (TCAL9538RSVR_INIT(&U7, &hi2c4, 0x00, 0b00000000, 0b00000000) != HAL_OK) { Error_Handler(); } // output
 
   // set outputs to low to start
-  TCAL9538RSVR_SetOutput(&U7, &outputPortState);
+  uint8_t invertedOutputState = ~outputPortState;
+  TCAL9538RSVR_SetOutput(&U7, &invertedOutputState);
 
   HAL_CAN_Start(&hcan1);
 
@@ -850,7 +851,8 @@ void StartTask04(void *argument)
         outputPortState &= ~(OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
     }
 
-    if(TCAL9538RSVR_SetOutput(&U7, &outputPortState) != HAL_OK)
+    uint8_t invertedOutputState = ~outputPortState;
+    if(TCAL9538RSVR_SetOutput(&U7, &invertedOutputState) != HAL_OK)
     {
     	Error_Handler();
     }

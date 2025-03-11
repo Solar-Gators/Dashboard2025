@@ -57,11 +57,13 @@ uint8_t TCAL9538RSVR_INIT(TCAL9538RSVR *dev, I2C_HandleTypeDef *i2cHandle, uint8
     status = TCAL9538RSVR_SetInterrupts(dev, interrupt_bitMask);
     errNum += (status != HAL_OK);
 
+    // if all pins are inputs, invert all pins
     if (direction_bitMask == 0xFF) {
         uint8_t full = 0xFF;
         status = TCAL9538RSVR_WriteRegister(dev, TCAL9538RSVR_GPIO_INVERSION, &full);
         errNum += (status != HAL_OK);
     }
+    
 
     return (errNum);
 }
