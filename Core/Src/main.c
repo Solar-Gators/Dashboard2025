@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "TCAL9538RSVR.h"
 #include "defines.h"
+//#include "sg_can.hpp"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,6 +38,8 @@
 // Returns 0 or 1 if bit at pos in var is set
 #define CHECK_BIT(var,pos) !!((var) & (1<<(pos)))
 
+#define ADC_BUF_LEN 10 // ADC DMA Buffer size
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,6 +49,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan1;
 CAN_HandleTypeDef hcan2;
@@ -93,11 +97,10 @@ TCAL9538RSVR U5; // input 1
 TCAL9538RSVR U16; // input 2
 TCAL9538RSVR U7; // output
 
-uint16_t CruiseControlSpeed; //need range 0-65,535
-
 static uint8_t GPIO_Interrupt_Triggered;
 
-static uint8_t TxData[8] = {};
+
+static uint8_t cc_enable = 0;
 
 
 uint8_t outputPortState = 0b00000000; // variable with state of output port
@@ -105,11 +108,15 @@ uint8_t uart_rx = 0; // variable for holding the recieved data over uart from st
 uint8_t prev_uart_rx = 0; // variable to help with toggle logic
 LightState lightState = LIGHTS_NONE; 
 
+uint16_t adc_buf[ADC_BUF_LEN]; // variable to store ADC DMA Buffers
+volatile uint8_t dma_flag = 0; // flag for DMA start and stop
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_I2C4_Init(void);
 static void MX_CAN1_Init(void);
@@ -171,33 +178,20 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 5) << 3; // MC
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 6) << 4; // Array
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 4) << 5; // Extra 1
-	flags[1] |= CHECK_BIT(outputPortState, 5) << 6; // Horn
-	flags[1] |= CHECK_BIT(outputPortState, 6) << 7; // PTT
+	//flags[1] |= CHECK_BIT(outputPortState, 5) << 6; // Horn
+	//flags[1] |= CHECK_BIT(outputPortState, 6) << 7; // PTT (push to talk)
 
 
-	flags[2] |= CHECK_BIT(outputPortState, 2) << 0; // Blinkers
-	flags[2] |= CHECK_BIT(outputPortState, 0) << 1; // Left Turn Signal
-	flags[2] |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
+	//flags[2] |= CHECK_BIT(outputPortState, 2) << 0; // Blinkers
+	//flags[2] |= CHECK_BIT(outputPortState, 0) << 1; // Left Turn Signal
+	//flags[2] |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
 	flags[2] ^= CHECK_BIT(risingEdges_flag1, 7) << 3; //?
 
-
+	cc_enable ^= CHECK_BIT(risingEdges_flag2, 1);
 
 	prev_input1 = *Input1;
 	prev_input2 = *Input2;
 
-}
-
-uint8_t updateDebounce(uint8_t stable, uint8_t newReading, uint8_t *counter) {
-    if (newReading != stable) {
-        (*counter)++;
-        if (*counter >= 3) {
-            *counter = 0;
-            return newReading;
-        }
-    } else {
-        *counter = 0;
-    }
-    return stable;
 }
 
 void CruiseControlManagement()
@@ -208,6 +202,8 @@ void CruiseControlManagement()
 	 * s
 	 * cc- (cc set)
 	 * cc+ (cc reset)
+	 *
+	 * lock in val (turn on off)
 	 *
 	 * */
 }
@@ -248,6 +244,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_I2C4_Init();
   MX_CAN1_Init();
@@ -255,8 +252,6 @@ int main(void)
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
   if (TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0xFF, 0x00) != HAL_OK) { Error_Handler(); } // inputs
-  uint8_t reg_read_hold;
-  TCAL9538RSVR_ReadRegister(&U5, 0x45, &reg_read_hold);
   //if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b00111111, 0b11000000) != HAL_OK) { Error_Handler(); }
   if (TCAL9538RSVR_INIT(&U7, &hi2c4, 0x00, 0b00000000, 0b00000000) != HAL_OK) { Error_Handler(); } // output
 
@@ -266,7 +261,7 @@ int main(void)
 
   HAL_CAN_Start(&hcan1);
 
-  HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enables uart interrupt, it will call the interrupt when one byte is recieved
+  //HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enables uart interrupt, it will call the interrupt when one byte is recieved
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -297,7 +292,7 @@ int main(void)
   HeartBeatHandle = osThreadNew(StartTask01, NULL, &HeartBeat_attributes);
 
   /* creation of Critical_Inputs */
-  //Critical_InputsHandle = osThreadNew(StartTask02, NULL, &Critical_Inputs_attributes);
+  Critical_InputsHandle = osThreadNew(StartTask02, NULL, &Critical_Inputs_attributes);
 
   /* creation of ReadIOExpander */
   ReadIOExpanderHandle = osThreadNew(StartTask03, NULL, &ReadIOExpander_attributes);
@@ -398,11 +393,11 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
-  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.NbrOfConversion = 10;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -434,6 +429,78 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_4;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_6;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_7;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_8;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_9;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_10;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
@@ -456,10 +523,10 @@ static void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 16;
+  hcan1.Init.Prescaler = 2;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_2TQ;
   hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
@@ -493,10 +560,10 @@ static void MX_CAN2_Init(void)
 
   /* USER CODE END CAN2_Init 1 */
   hcan2.Instance = CAN2;
-  hcan2.Init.Prescaler = 16;
+  hcan2.Init.Prescaler = 2;
   hcan2.Init.Mode = CAN_MODE_NORMAL;
   hcan2.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan2.Init.TimeSeg1 = CAN_BS1_1TQ;
+  hcan2.Init.TimeSeg1 = CAN_BS1_2TQ;
   hcan2.Init.TimeSeg2 = CAN_BS2_1TQ;
   hcan2.Init.TimeTriggeredMode = DISABLE;
   hcan2.Init.AutoBusOff = DISABLE;
@@ -598,6 +665,22 @@ static void MX_UART4_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -610,11 +693,20 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(OK_LED_GPIO_Port, OK_LED_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, D0_Pin|D1_Pin|D2_Pin|D3_Pin
+                          |D4_Pin|D5_Pin|D6_Pin|D7_Pin
+                          |OK_LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(Backlight_PWM_GPIO_Port, Backlight_PWM_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, C_D_Pin|WR_Pin|RD_Pin|Parallel_CS_Pin
+                          |D_C_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : Alert1_Pin */
   GPIO_InitStruct.Pin = Alert1_Pin;
@@ -622,12 +714,32 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(Alert1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : OK_LED_Pin */
-  GPIO_InitStruct.Pin = OK_LED_Pin;
+  /*Configure GPIO pins : D0_Pin D1_Pin D2_Pin D3_Pin
+                           D4_Pin D5_Pin D6_Pin D7_Pin
+                           OK_LED_Pin */
+  GPIO_InitStruct.Pin = D0_Pin|D1_Pin|D2_Pin|D3_Pin
+                          |D4_Pin|D5_Pin|D6_Pin|D7_Pin
+                          |OK_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(OK_LED_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : Backlight_PWM_Pin */
+  GPIO_InitStruct.Pin = Backlight_PWM_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(Backlight_PWM_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : C_D_Pin WR_Pin RD_Pin Parallel_CS_Pin
+                           D_C_Pin */
+  GPIO_InitStruct.Pin = C_D_Pin|WR_Pin|RD_Pin|Parallel_CS_Pin
+                          |D_C_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI2_IRQn, 5, 0);
@@ -719,20 +831,21 @@ void StartTask01(void *argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
-	//uint8_t var = 0b11111111;
   for(;;)
   {
-	HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
-	//var = ~var;
-	//TCAL9538RSVR_SetOutput(&U7, &var);
-	uint8_t val = TxData[1];
-	uint8_t val2 = TxData[2];
+	  HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
     osDelay(500);
   }
   /* USER CODE END 5 */
 }
 
 /* USER CODE BEGIN Header_StartTask02 */
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
+	dma_flag = 1;
+}
+
+
 /**
 * @brief Function implementing the Critical_Inputs thread.
 * @param argument: Not used
@@ -742,18 +855,90 @@ void StartTask01(void *argument)
 void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
-  /* Infinite loop */
 
-  //create veraibe, for storing ADC variable
-  uint8_t var;
-  for(;;)
+	uint16_t adc_var_avg = 0;
 
+	int HAL_CAN_BUSY = 0;
+	uint64_t messages_sent = 0;
+	static uint8_t update_cc = 0;
+
+	CAN_TxHeaderTypeDef TxHeader;
+	uint8_t TxData[8] = { 0 };
+	uint32_t TxMailbox = { 0 };
+
+	TxHeader.IDE = CAN_ID_STD; // Standard ID (not extended)
+	TxHeader.StdId = 0x0; // 11 bit Identifier
+	TxHeader.RTR = CAN_RTR_DATA; // Std RTR Data frame
+	TxHeader.DLC = 8; // 8 bytes being transmitted
+	TxData[0] = 1;
+
+
+	// Start ADC with DMA
+	uint8_t adc_data[2];
+
+
+
+  	  // Transmit over CAN
+  	  HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+
+
+  for (;;)
   {
-	//Code for reading ADC values
 
-	  //TCAL9538RSVR_ReadInput(&U5, &var);
-	//code sending data over CAN
+	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buf, ADC_BUF_LEN);
+	// Start ADC with DMA
+	while (!(dma_flag));
 
+	// Stop ADC with DMA
+	HAL_ADC_Stop_DMA(&hadc1);
+	dma_flag = 0;
+	adc_var_avg = 0;
+	// Copy ADC buffer and compute average
+	for (int i = 0; i < ADC_BUF_LEN; i++)
+	{
+		adc_var_avg += adc_buf[i];
+	}
+	adc_var_avg /= ADC_BUF_LEN;
+
+
+	adc_data[0] = adc_var_avg & 0xFF;
+	adc_data[1] = (adc_var_avg >> 8) & 0x0F;
+
+	if (cc_enable)
+	{
+		if (update_cc)
+		{
+			TxData[5] = adc_data[0];
+			TxData[6] = adc_data[1];
+			update_cc = 0;
+		}
+	}
+	else
+	{
+		TxData[5] = 0;
+		TxData[6] = 0;
+		update_cc = 1;
+	}
+
+
+	TxData[0] = 0;
+	TxData[1] = adc_data[0];
+	TxData[2] = adc_data[1];
+	//Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
+    // Wait until the ADC DMA completes
+	  // Send CAN messages
+	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+	  HAL_StatusTypeDef status;
+	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+	  messages_sent++;
+	  if (status == HAL_ERROR)
+	  {
+		  Error_Handler();
+	  }
+	  else if (status == HAL_BUSY)
+	  {
+		  HAL_CAN_BUSY++;
+	  }
     osDelay(1);
   }
   /* USER CODE END StartTask02 */
@@ -771,19 +956,20 @@ void StartTask03(void *argument)
   /* USER CODE BEGIN StartTask03 */
 
 	int debounce_count = 0;
+	int HAL_CAN_BUSY = 0;
+	uint64_t messages_sent = 0;
 
 	CAN_TxHeaderTypeDef TxHeader;
-	//uint8_t TxData[8] = { 0 };
-	uint32_t TxMailbox;
+	uint8_t TxData[8] = { 0 };
+	uint32_t TxMailbox = { 0 };
 
 	TxHeader.IDE = CAN_ID_STD; // Standard ID (not extended)
-	TxHeader.StdId = 0x3FF; // 11 bit Identifier !!Change!!
+	TxHeader.StdId = 0x7FF; // 11 bit Identifier !!Change!!
 	TxHeader.RTR = CAN_RTR_DATA; // Std RTR Data frame
 	TxHeader.DLC = 8; // 8 bytes being transmitted
+	TxData[0] = 1;
 
 	Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
-	//stableInput1 = U5.portValues;
-	//stableInput2 = U16.portValues;
 
 	/* Infinite loop */
 	for(;;)
@@ -797,18 +983,23 @@ void StartTask03(void *argument)
 
 
 		  Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
-		  uint8_t val = TxData[1];
-		  uint8_t val2 = TxData[2];
 		  GPIO_Interrupt_Triggered = 0;
 		  debounce_count = 0;
 	  }
 
 	  // Send CAN messages
-//	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
-//	  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-//	  {
-//		  Error_Handler();
-//	  }
+	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+	  HAL_StatusTypeDef status;
+	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+	  messages_sent++;
+	  if (status == HAL_ERROR)
+	  {
+		  Error_Handler();
+	  }
+	  else if (status == HAL_BUSY)
+	  {
+		  HAL_CAN_BUSY++;
+	  }
 	  osDelay(1);
   }
   /* USER CODE END StartTask03 */
