@@ -1,0 +1,8 @@
+../Core/Src/Drivers/TCAL9538RSVR.c:39:9:TCAL9538RSVR_INIT	32	static
+../Core/Src/Drivers/TCAL9538RSVR.c:76:19:TCAL9538RSVR_SetDirection	16	static
+../Core/Src/Drivers/TCAL9538RSVR.c:86:19:TCAL9538RSVR_SetInterrupts	16	static
+../Core/Src/Drivers/TCAL9538RSVR.c:96:19:TCAL9538RSVR_HandleInterrupt	24	static
+../Core/Src/Drivers/TCAL9538RSVR.c:117:19:TCAL9538RSVR_ReadInput	16	static
+../Core/Src/Drivers/TCAL9538RSVR.c:121:19:TCAL9538RSVR_SetOutput	16	static
+../Core/Src/Drivers/TCAL9538RSVR.c:127:19:TCAL9538RSVR_ReadRegister	40	static
+../Core/Src/Drivers/TCAL9538RSVR.c:131:19:TCAL9538RSVR_WriteRegister	40	static

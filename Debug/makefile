@@ -14,7 +14,9 @@ RM := rm -rf
 -include Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/subdir.mk
 -include Middlewares/Third_Party/FreeRTOS/Source/subdir.mk
 -include Drivers/STM32L4xx_HAL_Driver/Src/subdir.mk
+-include Drivers/subdir.mk
 -include Core/Startup/subdir.mk
+-include Core/Src/Drivers/subdir.mk
 -include Core/Src/subdir.mk
 -include objects.mk
 
@@ -88,8 +90,8 @@ all: main-build
 main-build: Dashbaord2025.elf secondary-outputs
 
 # Tool invocations
-Dashbaord2025.elf Dashbaord2025.map: $(OBJS) $(USER_OBJS) C:\Users\samrb\STM32CubeIDE\workspace_1.16.0\Dashbaord2025\STM32L496RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "Dashbaord2025.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\samrb\STM32CubeIDE\workspace_1.16.0\Dashbaord2025\STM32L496RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Dashbaord2025.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Dashbaord2025.elf Dashbaord2025.map: $(OBJS) $(USER_OBJS) /home/jackb/Documents/UniversityofFlorida/SolarGators/stm32cubeide_projects/Dashboard2025/STM32L496RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "Dashbaord2025.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/jackb/Documents/UniversityofFlorida/SolarGators/stm32cubeide_projects/Dashboard2025/STM32L496RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Dashbaord2025.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
