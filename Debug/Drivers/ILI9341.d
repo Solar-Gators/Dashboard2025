@@ -1,4 +1,4 @@
-Drivers/ILI9341.o: ../Drivers/ILI9341.cpp ../Drivers/ILI9341.h \
+Drivers/ILI9341.o: ../Drivers/ILI9341.cpp ../Drivers/ILI9341.hpp \
  ../Core/Inc/main.h ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
  ../Core/Inc/stm32l4xx_hal_conf.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h \
@@ -46,7 +46,7 @@ Drivers/ILI9341.o: ../Drivers/ILI9341.cpp ../Drivers/ILI9341.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
  ../Drivers/GfxFont.h
-../Drivers/ILI9341.h:
+../Drivers/ILI9341.hpp:
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
