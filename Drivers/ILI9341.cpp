@@ -6,7 +6,7 @@
  *      Source: Adafruit GFX Library      https://github.com/adafruit/Adafruit-GFX-Library
  *              Adafruit TFT-LCD Library  https://github.com/adafruit/TFTLCD-Library
  */
-#include "ILI9341.h"
+#include <ILI9341.hpp>
 #include "ILI9341_CMD.hpp"
 #include "cmsis_os.h"
 #include "GfxFont.h"
