@@ -5,8 +5,8 @@
  *      Author: John Carr
  */
 
-#ifndef ILI9341_H_
-#define ILI9341_H_
+#ifndef ILI9341_HPP_
+#define ILI9341_HPP_
 
 #include "main.h"
 
@@ -133,8 +133,8 @@ private:
   uint16_t LCD_RST_Pin_               = GPIO_PIN_5;
   GPIO_TypeDef* LCD_RST_GPIO_Port_    = GPIOC;
   // Backlight
-  uint16_t Backlight_PWM_Pin_          = GPIO_PIN_5;
+  uint16_t Backlight_PWM_Pin_          = GPIO_PIN_4;
   GPIO_TypeDef* Backlight_PWM_GPIO_Port_    = GPIOC;
 };
 
-#endif /* ILI9341_H_ */
+#endif /* ILI9341_HPP_ */
