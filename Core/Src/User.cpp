@@ -9,6 +9,7 @@ uint16_t adc_buf[ADC_BUF_LEN];
 volatile uint8_t dma_flag; // flag for DMA start and stop
 static uint8_t cc_enable;
 static uint8_t GPIO_Interrupt_Triggered;
+uint8_t UART4_rxBuffer[20];
 
 
 uint8_t outputPortState; // variable with state of output port
@@ -51,6 +52,8 @@ void CPP_UserSetup(void) {
     screen.FillCircle(20, 20, 10, color);
 
 
+
+
 }
 
 
@@ -60,6 +63,7 @@ void StartTask01(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	  //HAL_UART_Receive(&huart4, UART4_rxBuffer, 1, HAL_MAX_DELAY);
 	  HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
     osDelay(500);
   }
@@ -217,6 +221,8 @@ void StartTask04(void *argument)
 {
   /* USER CODE BEGIN StartTask04 */
 
+  HAL_StatusTypeDef test = HAL_UART_Receive_IT(&huart4, UART4_rxBuffer, 1);
+
   uint32_t lastBlinkTime = HAL_GetTick();
   const uint32_t blinkInterval = 500;
 
@@ -257,70 +263,7 @@ void StartTask04(void *argument)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 
-  if (huart->Instance == UART4)
-  {
-    uint8_t new_presses = uart_rx & ~prev_uart_rx;
-
-    // if left turn button was pressed
-    if (new_presses & BUTTON_LEFT_TURN)
-    {
-      if (lightState == LIGHTS_LEFT)
-        lightState = LIGHTS_NONE;
-      else
-        lightState = LIGHTS_LEFT;
-    }
-
-    // if right turn button was pressed
-    if (new_presses & BUTTON_RIGHT_TURN)
-    {
-      if (lightState == LIGHTS_RIGHT)
-        lightState = LIGHTS_NONE;
-      else
-        lightState = LIGHTS_RIGHT;
-    }
-
-    // if hazard button was pressed
-    if (new_presses & BUTTON_HAZARD)
-    {
-      if (lightState == LIGHTS_HAZARD)
-        lightState = LIGHTS_NONE;
-      else
-        lightState = LIGHTS_HAZARD;
-    }
-
-    // if headlight button was pressed
-    if (new_presses & BUTTON_HEADLIGHTS)
-    {
-      // toggle headlight state
-      outputPortState ^= OUTPUT_R_HEAD_CTRL;
-      outputPortState ^= OUTPUT_L_HEAD_CTRL;
-    }
-
-    // if display button was pressed, (I think this is toggle)
-    if (new_presses & BUTTON_DISPLAY)
-    {
-      // toggle display state
-      outputPortState ^= OUTPUT_FL_LIGHT_CTRL;
-      outputPortState ^= OUTPUT_FR_LIGHT_CTRL;
-    }
-
-    // if horn button is being pressed currently
-    if (uart_rx & BUTTON_HORN)
-      outputPortState |= OUTPUT_HORN_CTRL;
-    else
-      outputPortState &= ~OUTPUT_HORN_CTRL;
-
-    // if PTT button is being pressed currently
-    /*
-    TODO: Some code with PTT button (does this just go over can what even is PTT)
-    TODO: Some code with Fan (where does fan come from)
-    */
-
-
-    prev_uart_rx = uart_rx;
-  }
-
-  HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // reenables uart interrupt
+	HAL_UART_Receive_IT(&huart4, UART4_rxBuffer, 1); // reenables uart interrupt
 }
 
 
