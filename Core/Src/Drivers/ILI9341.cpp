@@ -505,4 +505,26 @@ void ILI9341::FillRect(uint16_t x1, uint16_t y1, uint16_t w, uint16_t h, uint16_
   SetWindow(x1, y1, x2, y2);
   Flood(color, (uint32_t)w * (uint32_t)h);
 }
+void ILI9341::FillCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color) {
+    int16_t x = 0, y = r;
+    int16_t d = 1 - r;
 
+    // Draw initial center line
+    DrawFastHLine(x0 - r, y0, 2 * r + 1, color);
+
+    while (y >= x) {
+        // Draw horizontal spans
+        DrawFastHLine(x0 - x, y0 + y, 2 * x + 1, color);
+        DrawFastHLine(x0 - x, y0 - y, 2 * x + 1, color);
+        DrawFastHLine(x0 - y, y0 + x, 2 * y + 1, color);
+        DrawFastHLine(x0 - y, y0 - x, 2 * y + 1, color);
+
+        x++;
+        if (d < 0) {
+            d += 2 * x + 1;
+        } else {
+            y--;
+            d += 2 * (x - y) + 1;
+        }
+    }
+}
