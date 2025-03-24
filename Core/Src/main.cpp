@@ -23,8 +23,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "TCAL9538RSVR.h"
-#include "defines.h"
 #include "User.hpp"
 //#include "sg_can.hpp"
 /* USER CODE END Includes */

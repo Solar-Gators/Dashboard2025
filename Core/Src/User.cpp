@@ -13,7 +13,6 @@ static uint8_t GPIO_Interrupt_Triggered;
 
 uint8_t outputPortState; // variable with state of output port
 uint8_t uart_rx; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
-uint8_t prev_uart_rx; // variable to help with toggle logic
 LightState lightState;
 
 void CPP_UserSetup(void) {
@@ -25,15 +24,17 @@ void CPP_UserSetup(void) {
 
     outputPortState = 0; // variable with state of output port
     uart_rx = 0; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
-    prev_uart_rx = 0; // variable to help with toggle logic
     lightState = LIGHTS_NONE;
 
     if (TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0xFF, 0x00) != HAL_OK) { Error_Handler(); } // inputs
       //if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b00111111, 0b11000000) != HAL_OK) { Error_Handler(); }
     if (TCAL9538RSVR_INIT(&U7, &hi2c4, 0x00, 0b00000000, 0b00000000) != HAL_OK) { Error_Handler(); } // output
 
-      // set outputs to low to start
+    // set outputs to low to start
+	outputPortState = ~outputPortState;
     TCAL9538RSVR_SetOutput(&U7, &outputPortState);
+
+	HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enable uart interrupt
 
     ILI9341 screen(320, 240);
     screen.Init();
@@ -49,8 +50,6 @@ void CPP_UserSetup(void) {
 
     color = 0x07E0;
     screen.FillCircle(20, 20, 10, color);
-
-
 }
 
 
@@ -256,73 +255,49 @@ void StartTask04(void *argument)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+	if (huart->Instance == UART4)
+  	{
+		// uart data for lights (blinkers)
+		if (uart_rx & BUTTON_LEFT_TURN)
+			lightState = LIGHTS_LEFT;
+		else if (uart_rx & BUTTON_RIGHT_TURN)
+			lightState = LIGHTS_NONE;
+		else if (uart_rx & BUTTON_HAZARD)
+			lightState = LIGHTS_HAZARD;
+		else
+			lightState = LIGHTS_NONE;
 
-  if (huart->Instance == UART4)
-  {
-    uint8_t new_presses = uart_rx & ~prev_uart_rx;
+		// if headlight should be on  
+		if (uart_rx & BUTTON_HEADLIGHTS)
+			outputPortState |= (OUTPUT_R_HEAD_CTRL | OUTPUT_L_HEAD_CTRL);
+		else 
+			outputPortState &= ~(OUTPUT_R_HEAD_CTRL | OUTPUT_L_HEAD_CTRL);
 
-    // if left turn button was pressed
-    if (new_presses & BUTTON_LEFT_TURN)
-    {
-      if (lightState == LIGHTS_LEFT)
-        lightState = LIGHTS_NONE;
-      else
-        lightState = LIGHTS_LEFT;
-    }
+		// if display should be on 
+		if (uart_rx & BUTTON_DISPLAY)
+			outputPortState |= OUTPUT_FL_LIGHT_CTRL;
+		else
+			outputPortState &= ~OUTPUT_FL_LIGHT_CTRL;
 
-    // if right turn button was pressed
-    if (new_presses & BUTTON_RIGHT_TURN)
-    {
-      if (lightState == LIGHTS_RIGHT)
-        lightState = LIGHTS_NONE;
-      else
-        lightState = LIGHTS_RIGHT;
-    }
+		// if horn should be on
+		if (uart_rx & BUTTON_HORN)
+			outputPortState |= OUTPUT_HORN_CTRL;
+		else
+			outputPortState &= ~OUTPUT_HORN_CTRL;
 
-    // if hazard button was pressed
-    if (new_presses & BUTTON_HAZARD)
-    {
-      if (lightState == LIGHTS_HAZARD)
-        lightState = LIGHTS_NONE;
-      else
-        lightState = LIGHTS_HAZARD;
-    }
+		if (uart_rx & BUTTON_FAN)
+			outputPortState |= OUTPUT_FAN_CTRL;
+		else
+			outputPortState &= ~OUTPUT_FAN_CTRL;
 
-    // if headlight button was pressed
-    if (new_presses & BUTTON_HEADLIGHTS)
-    {
-      // toggle headlight state
-      outputPortState ^= OUTPUT_R_HEAD_CTRL;
-      outputPortState ^= OUTPUT_L_HEAD_CTRL;
-    }
-
-    // if display button was pressed, (I think this is toggle)
-    if (new_presses & BUTTON_DISPLAY)
-    {
-      // toggle display state
-      outputPortState ^= OUTPUT_FL_LIGHT_CTRL;
-      outputPortState ^= OUTPUT_FR_LIGHT_CTRL;
-    }
-
-    // if horn button is being pressed currently
-    if (uart_rx & BUTTON_HORN)
-      outputPortState |= OUTPUT_HORN_CTRL;
-    else
-      outputPortState &= ~OUTPUT_HORN_CTRL;
-
-    // if PTT button is being pressed currently
-    /*
-    TODO: Some code with PTT button (does this just go over can what even is PTT)
-    TODO: Some code with Fan (where does fan come from)
-    */
-
-
-    prev_uart_rx = uart_rx;
+		/*
+		TODO: Some code with PTT button (does this just go over can what even is PTT)
+		TODO: Some code with Fan (where does fan come from) 
+		*/
   }
 
   HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // reenables uart interrupt
 }
-
 
 
 void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
