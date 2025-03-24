@@ -88,6 +88,14 @@ const osThreadAttr_t Outputs_Control_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+
+/* Definitions for ScreenControl */
+osThreadId_t ScreenControlHandle;
+const osThreadAttr_t ScreenControl_attributes = {
+  .name = "ScreenControl",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* Definitions for CAN_Mutex */
 osSemaphoreId_t CAN_MutexHandle;
 const osSemaphoreAttr_t CAN_Mutex_attributes = {
@@ -121,6 +129,7 @@ void StartTask01(void *argument);
 void StartTask02(void *argument);
 void StartTask03(void *argument);
 void StartTask04(void *argument);
+void StartTask05(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -173,11 +182,12 @@ int main(void)
 
   CPP_UserSetup();
 
+
   HAL_CAN_Start(&hcan1);
+  HAL_UART_Init(&huart4);
 
 
 
-  //HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enables uart interrupt, it will call the interrupt when one byte is recieved
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -215,6 +225,11 @@ int main(void)
 
   /* creation of Outputs_Control */
   Outputs_ControlHandle = osThreadNew(StartTask04, NULL, &Outputs_Control_attributes);
+
+
+  ScreenControlHandle = osThreadNew(StartTask05, NULL, &ScreenControl_attributes);
+
+
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
