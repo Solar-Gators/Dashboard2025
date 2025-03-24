@@ -256,12 +256,13 @@ int main(void)
   if (TCAL9538RSVR_INIT(&U7, &hi2c4, 0x00, 0b00000000, 0b00000000) != HAL_OK) { Error_Handler(); } // output
 
   // set outputs to low to start
+
   uint8_t invertedOutputState = ~outputPortState;
   TCAL9538RSVR_SetOutput(&U7, &invertedOutputState);
 
   HAL_CAN_Start(&hcan1);
 
-  //HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enables uart interrupt, it will call the interrupt when one byte is recieved
+  HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enables uart interrupt, it will call the interrupt when one byte is recieved
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -755,58 +756,39 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
   if (huart->Instance == UART4)
   {
-    uint8_t new_presses = uart_rx & ~prev_uart_rx;
+    // uart data for lights (blinkers)
+    if (uart_rx & BUTTON_LEFT_TURN)
+     lightState = LIGHTS_LEFT;
+    else if (uart_rx & BUTTON_RIGHT_TURN)
+      lightState = LIGHTS_NONE;
+    else if (uart_rx & BUTTON_HAZARD)
+      lightState = LIGHTS_HAZARD;
+    else
+      lightState = LIGHTS_NONE;
 
-    // if left turn button was pressed
-    if (new_presses & BUTTON_LEFT_TURN)
-    {
-      if (lightState == LIGHTS_LEFT)
-        lightState = LIGHTS_NONE;
-      else
-        lightState = LIGHTS_LEFT;
-    }
+    // if headlight should be on  
+    if (uart_rx & BUTTON_HEADLIGHTS)
+      outputPortState |= (OUTPUT_R_HEAD_CTRL | OUTPUT_L_HEAD_CTRL);
+    else 
+      outputPortState &= ~(OUTPUT_R_HEAD_CTRL | OUTPUT_L_HEAD_CTRL);
 
-    // if right turn button was pressed
-    if (new_presses & BUTTON_RIGHT_TURN)
-    {
-      if (lightState == LIGHTS_RIGHT)
-        lightState = LIGHTS_NONE;
-      else
-        lightState = LIGHTS_RIGHT;
-    }
+    // if display should be on 
+    if (uart_rx & BUTTON_DISPLAY)
+      outputPortState |= OUTPUT_FL_LIGHT_CTRL;
+    else
+      outputPortState &= ~OUTPUT_FL_LIGHT_CTRL;
 
-    // if hazard button was pressed
-    if (new_presses & BUTTON_HAZARD)
-    {
-      if (lightState == LIGHTS_HAZARD)
-        lightState = LIGHTS_NONE;
-      else
-        lightState = LIGHTS_HAZARD;
-    }
-
-    // if headlight button was pressed
-    if (new_presses & BUTTON_HEADLIGHTS)
-    {
-      // toggle headlight state
-      outputPortState ^= OUTPUT_R_HEAD_CTRL;
-      outputPortState ^= OUTPUT_L_HEAD_CTRL;
-    }
-
-    // if display button was pressed, (I think this is toggle)
-    if (new_presses & BUTTON_DISPLAY)
-    {
-      // toggle display state
-      outputPortState ^= OUTPUT_FL_LIGHT_CTRL;
-      outputPortState ^= OUTPUT_FR_LIGHT_CTRL;
-    }
-
-    // if horn button is being pressed currently
+    // if horn should be on
     if (uart_rx & BUTTON_HORN)
       outputPortState |= OUTPUT_HORN_CTRL;
     else
       outputPortState &= ~OUTPUT_HORN_CTRL;
 
-    // if PTT button is being pressed currently
+    if (uart_rx & BUTTON_FAN)
+      outputPortState |= OUTPUT_FAN_CTRL;
+    else
+      outputPortState &= ~OUTPUT_FAN_CTRL;
+
     /*
     TODO: Some code with PTT button (does this just go over can what even is PTT)
     TODO: Some code with Fan (where does fan come from) 

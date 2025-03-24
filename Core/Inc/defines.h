@@ -9,8 +9,9 @@
 #define BUTTON_HAZARD       (1 << 2)  // Bit 2
 #define BUTTON_HEADLIGHTS   (1 << 3)  // Bit 3
 #define BUTTON_DISPLAY      (1 << 4)  // Bit 4
-#define BUTTON_HORN         (1 << 5)  // Bit 5
+#define BUTTON_FAN          (1 << 5)  // Bit 5
 #define BUTTON_PTT          (1 << 6)  // Bit 6
+#define BUTTON_HORN         (1 << 7)  // Bit 7
 
 // GPIO expander output mappings (TCAL9538)
 #define OUTPUT_HORN_CTRL        (1 << 0)
@@ -27,16 +28,5 @@ typedef enum {
     LIGHTS_RIGHT = 2,
     LIGHTS_HAZARD = 3
 } LightState;
-
-/* UNUSED IDEA, only really useful for readability i think
-// Struct to store the dashboard state
-typedef struct {
-    bool horn;
-    bool ptt;
-    bool headlight;
-    bool display;
-    LightState blinker_state;
-} DashboardState;
-*/
 
 #endif // DASHBOARD_DEFINES_H
