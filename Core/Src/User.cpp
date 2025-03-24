@@ -11,20 +11,47 @@ static uint8_t cc_enable;
 static uint8_t GPIO_Interrupt_Triggered;
 
 
+
 uint8_t outputPortState; // variable with state of output port
 uint8_t uart_rx; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
 LightState lightState;
+LightState oldLightsState;
+uint8_t hornState;
+
+uint8_t BMS_Status;
+uint8_t MC_Status;
+uint8_t Array_Status;
+
+uint8_t old_BMS_Status;
+uint8_t old_MC_Status;
+uint8_t old_Array_Status;
+
+uint8_t UART4_rxBuffer[20];
+ILI9341 screen(320, 240);
 
 void CPP_UserSetup(void) {
     // Make sure that timer priorities are configured correctly
     HAL_Delay(10);
 
+
+
     dma_flag = 0;
     cc_enable = 0;
+
+    hornState = 0;
+
+    BMS_Status = 0;
+    MC_Status = 0;
+    Array_Status = 0;
+
+    old_BMS_Status = 0;
+    old_MC_Status = 0;
+    old_Array_Status = 0;
 
     outputPortState = 0; // variable with state of output port
     uart_rx = 0; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
     lightState = LIGHTS_NONE;
+    oldLightsState = LIGHTS_NONE;
 
     if (TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0xFF, 0x00) != HAL_OK) { Error_Handler(); } // inputs
       //if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b00111111, 0b11000000) != HAL_OK) { Error_Handler(); }
@@ -43,13 +70,23 @@ void CPP_UserSetup(void) {
 
     uint16_t x_text = 80;
     uint16_t y_text = 10;
-    const char* str = "UF Solar Gators\0";
+    const char* str1 = "UF Solar Gators\0";
     uint16_t color = 32;
     screen.SetTextSize(2);
-    screen.DrawText(x_text, y_text, str, color);
+    screen.DrawText(x_text, y_text, str1, color);
 
-    color = 0x07E0;
-    screen.FillCircle(20, 20, 10, color);
+    x_text = 55;
+    y_text = 170;
+    const char* str2 = "BMS    MC    Array\0";
+
+    screen.SetTextSize(2);
+    screen.DrawText(x_text, y_text, str2, color);
+
+    color  = 0xf800;
+    screen.FillCircle(70, 210, 10, color);
+    screen.FillCircle(150, 210, 10, color);
+    screen.FillCircle(235, 210, 10, color);
+
 }
 
 
@@ -59,6 +96,7 @@ void StartTask01(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	  //HAL_UART_Receive(&huart4, UART4_rxBuffer, 1, HAL_MAX_DELAY);
 	  HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
     osDelay(500);
   }
@@ -152,7 +190,7 @@ void StartTask02(void *argument)
 	  {
 		  HAL_CAN_BUSY++;
 	  }
-    osDelay(1);
+    osDelay(20);
   }
   /* USER CODE END StartTask02 */
 }
@@ -206,7 +244,7 @@ void StartTask03(void *argument)
 	  {
 		  HAL_CAN_BUSY++;
 	  }
-	  osDelay(1);
+	  osDelay(50);
   }
   /* USER CODE END StartTask03 */
 }
@@ -247,56 +285,71 @@ void StartTask04(void *argument)
     	Error_Handler();
     }
 
-    osDelay(1);
+    osDelay(100);
   }
   /* USER CODE END StartTask04 */
 }
 
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+void StartTask05(void *argument)
 {
-	if (huart->Instance == UART4)
-  	{
-		// uart data for lights (blinkers)
-		if (uart_rx & BUTTON_LEFT_TURN)
-			lightState = LIGHTS_LEFT;
-		else if (uart_rx & BUTTON_RIGHT_TURN)
-			lightState = LIGHTS_NONE;
-		else if (uart_rx & BUTTON_HAZARD)
-			lightState = LIGHTS_HAZARD;
-		else
-			lightState = LIGHTS_NONE;
+  /* USER CODE BEGIN StartTask05 */
+  uint16_t color = 32;
+  /* Infinite loop */
+  for(;;)
+  {
+	if(oldLightsState != lightState){
+		HAL_Delay(1);
+		if(lightState == LIGHTS_LEFT){
+			color = 0x07E0;
+			screen.FillCircle(20, 20, 10, color);
 
-		// if headlight should be on  
-		if (uart_rx & BUTTON_HEADLIGHTS)
-			outputPortState |= (OUTPUT_R_HEAD_CTRL | OUTPUT_L_HEAD_CTRL);
-		else 
-			outputPortState &= ~(OUTPUT_R_HEAD_CTRL | OUTPUT_L_HEAD_CTRL);
+			color = 0xFFFF;
+			screen.FillCircle(300, 20, 10, color);
+		}
+		if(lightState == LIGHTS_RIGHT){
+			color = 0xFFFF;
+			screen.FillCircle(20, 20, 10, color);
 
-		// if display should be on 
-		if (uart_rx & BUTTON_DISPLAY)
-			outputPortState |= OUTPUT_FL_LIGHT_CTRL;
-		else
-			outputPortState &= ~OUTPUT_FL_LIGHT_CTRL;
+			color = 0x07E0;
+			screen.FillCircle(300, 20, 10, color);
+		}
+		if(lightState == LIGHTS_HAZARD){
+			color = 0x07E0;
+			screen.FillCircle(20, 20, 10, color);
 
-		// if horn should be on
-		if (uart_rx & BUTTON_HORN)
-			outputPortState |= OUTPUT_HORN_CTRL;
-		else
-			outputPortState &= ~OUTPUT_HORN_CTRL;
+			color = 0x07E0;
+			screen.FillCircle(300, 20, 10, color);
+		}
+		if(lightState == LIGHTS_NONE){
 
-		if (uart_rx & BUTTON_FAN)
-			outputPortState |= OUTPUT_FAN_CTRL;
-		else
-			outputPortState &= ~OUTPUT_FAN_CTRL;
+			color = 0xFFFF;
+			screen.FillCircle(20, 20, 10, color);
 
-		/*
-		TODO: Some code with PTT button (does this just go over can what even is PTT)
-		TODO: Some code with Fan (where does fan come from) 
-		*/
+			color = 0xFFFF;
+			screen.FillCircle(300, 20, 10, color);
+		}
+		oldLightsState = lightState;
+	}
+	if(BMS_Status != old_BMS_Status){
+		if(BMS_Status == 1){
+			color == 0x07E0;
+		}else{
+			color == 0xf800;
+		}
+
+	}
+    BMS_Status = 0;
+    MC_Status = 0;
+    Array_Status = 0;
+
+    old_BMS_Status = 0;
+    old_MC_Status = 0;
+    old_Array_Status = 0;
+
+    osDelay(100);
   }
-
-  HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // reenables uart interrupt
+  /* USER CODE END StartTask05 */
 }
 
 
@@ -373,6 +426,51 @@ void CruiseControlManagement()
 	 *
 	 * */
 }
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if (huart->Instance == UART4)
+  	{
+		// uart data for lights (blinkers)
+		if (uart_rx & BUTTON_LEFT_TURN)
+			lightState = LIGHTS_LEFT;
+		else if (uart_rx & BUTTON_RIGHT_TURN)
+			lightState = LIGHTS_NONE;
+		else if (uart_rx & BUTTON_HAZARD)
+			lightState = LIGHTS_HAZARD;
+		else
+			lightState = LIGHTS_NONE;
+
+		// if headlight should be on  
+		if (uart_rx & BUTTON_HEADLIGHTS)
+			outputPortState |= (OUTPUT_R_HEAD_CTRL | OUTPUT_L_HEAD_CTRL);
+		else 
+			outputPortState &= ~(OUTPUT_R_HEAD_CTRL | OUTPUT_L_HEAD_CTRL);
+
+		// if display should be on 
+		if (uart_rx & BUTTON_DISPLAY)
+			outputPortState |= OUTPUT_FL_LIGHT_CTRL;
+		else
+			outputPortState &= ~OUTPUT_FL_LIGHT_CTRL;
+
+		// if horn should be on
+		if (uart_rx & BUTTON_HORN)
+			outputPortState |= OUTPUT_HORN_CTRL;
+		else
+			outputPortState &= ~OUTPUT_HORN_CTRL;
+
+		if (uart_rx & BUTTON_FAN)
+			outputPortState |= OUTPUT_FAN_CTRL;
+		else
+			outputPortState &= ~OUTPUT_FAN_CTRL;
+
+		/*
+		TODO: Some code with PTT button (does this just go over can what even is PTT)
+		TODO: Some code with Fan (where does fan come from) 
+		*/
+	}
+	HAL_UART_Receive_IT(&huart4, &uart_rx, 1);
+}
+
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
 	dma_flag = 1;
