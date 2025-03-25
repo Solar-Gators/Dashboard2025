@@ -414,14 +414,36 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 5) << 3; // MC
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 6) << 4; // Array
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 4) << 5; // Extra 1
-	//flags[1] |= CHECK_BIT(outputPortState, 5) << 6; // Horn
-	//flags[1] |= CHECK_BIT(outputPortState, 6) << 7; // PTT (push to talk)
+	if (CHECK_BIT(uart_rx, BUTTON_HORN_POS)) // Horn
+		flags[1] |= (1 << 6);
+	else
+		flags[1] &= ~(1 << 6);
+	if (CHECK_BIT(uart_rx, BUTTON_PTT_POS)) // PTT (Push to Talk)
+		flags[1] |= (1 << 7);
+	else
+		flags[1] &= ~(1 << 7);
 
-
-	//flags[2] |= CHECK_BIT(outputPortState, 2) << 0; // Blinkers
-	//flags[2] |= CHECK_BIT(outputPortState, 0) << 1; // Left Turn Signal
-	//flags[2] |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
-	flags[2] ^= CHECK_BIT(risingEdges_flag1, 7) << 3; //?
+	/*
+		NOTE:
+			currently sending state of turn signal, turn signal on or off
+			if wanting to send actual control of turn signal light, need to send outputPortState variable instead of lightState	
+	*/
+	if (lightState == LIGHTS_HAZARD) // Blinkers
+		flags[2] |= (1 << 0);
+	else
+		flags[2] &= ~(1 << 0);
+	if (lightState == LIGHTS_LEFT) // Left Turn
+		flags[2] |= (1 << 1);
+	else
+		flags[2] &= ~(1 << 1);
+	if (lightState == LIGHTS_RIGHT) // Right Turn
+		flags[2] |= (1 << 2);
+	else
+		flags[2] &= ~(1 << 2);
+	if (CHECK_BIT(uart_rx, BUTTON_HEADLIGHTS_POS)) // Headlights
+		flags[2] |= (1 << 3);
+	else
+		flags[2] &= ~(1 << 3);
 
 	cc_enable ^= CHECK_BIT(risingEdges_flag2, 1);
 
