@@ -26,7 +26,6 @@ uint8_t old_BMS_Status;
 uint8_t old_MC_Status;
 uint8_t old_Array_Status;
 
-uint8_t UART4_rxBuffer[20];
 ILI9341 screen(320, 240);
 
 void CPP_UserSetup(void) {
@@ -63,30 +62,35 @@ void CPP_UserSetup(void) {
 
 	HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enable uart interrupt
 
-    ILI9341 screen(320, 240);
     screen.Init();
     screen.SetRotation(3);
-    screen.ClearScreen(0xFFFF);
+    screen.ClearScreen(RGB565_WHITE);
 
-    uint16_t x_text = 80;
+    uint16_t x_text = 70;
     uint16_t y_text = 10;
-    const char* str1 = "UF Solar Gators\0";
-    uint16_t color = 32;
+    const char* str1 = "UF Solar Gators :)\0";
     screen.SetTextSize(2);
-    screen.DrawText(x_text, y_text, str1, color);
+    screen.DrawText(x_text, y_text, str1, RGB565_BLACK);
 
     x_text = 55;
     y_text = 170;
     const char* str2 = "BMS    MC    Array\0";
 
     screen.SetTextSize(2);
-    screen.DrawText(x_text, y_text, str2, color);
+    screen.DrawText(x_text, y_text, str2, RGB565_BLACK);
 
-    color  = 0xf800;
-    screen.FillCircle(70, 210, 10, color);
-    screen.FillCircle(150, 210, 10, color);
-    screen.FillCircle(235, 210, 10, color);
+    screen.FillCircle(70, 210, 10, RGB565_RED);
+    screen.FillCircle(150, 210, 10, RGB565_RED);
+    screen.FillCircle(235, 210, 10, RGB565_RED);
 
+	// temp to help debug  
+	const char* str3 = "HedLit Horn  Fan\0";
+    screen.SetTextSize(2);
+    screen.DrawText(55, 80, str3, RGB565_BLACK);  // Labels above the circles
+
+    screen.FillCircle(70, 120, 10, RGB565_RED);   // Headlights
+    screen.FillCircle(150, 120, 10, RGB565_RED);  // Horn
+    screen.FillCircle(235, 120, 10, RGB565_RED);  // Fan
 }
 
 
@@ -261,10 +265,6 @@ void StartTask04(void *argument)
   for(;;)
   {
 
-    // blinking logic needs to be done here now
-    // use lightState variable to see what should be turned on and then
-    // update outputPortState
-
     uint32_t currentTick = HAL_GetTick();
 
     if (currentTick - lastBlinkTime > blinkInterval)
@@ -301,44 +301,45 @@ void StartTask05(void *argument)
 	if(oldLightsState != lightState){
 		HAL_Delay(1);
 		if(lightState == LIGHTS_LEFT){
-			color = 0x07E0;
+			color = RGB565_GREEN;
 			screen.FillCircle(20, 20, 10, color);
 
-			color = 0xFFFF;
+			color = RGB565_WHITE;
 			screen.FillCircle(300, 20, 10, color);
 		}
 		if(lightState == LIGHTS_RIGHT){
-			color = 0xFFFF;
+			color = RGB565_WHITE;
 			screen.FillCircle(20, 20, 10, color);
 
-			color = 0x07E0;
+			color = RGB565_GREEN;
 			screen.FillCircle(300, 20, 10, color);
 		}
 		if(lightState == LIGHTS_HAZARD){
-			color = 0x07E0;
+			color = RGB565_GREEN;
 			screen.FillCircle(20, 20, 10, color);
 
-			color = 0x07E0;
+			color = RGB565_GREEN;
 			screen.FillCircle(300, 20, 10, color);
 		}
 		if(lightState == LIGHTS_NONE){
 
-			color = 0xFFFF;
+			color = RGB565_WHITE;
 			screen.FillCircle(20, 20, 10, color);
 
-			color = 0xFFFF;
+			color = RGB565_WHITE;
 			screen.FillCircle(300, 20, 10, color);
 		}
 		oldLightsState = lightState;
 	}
 	if(BMS_Status != old_BMS_Status){
 		if(BMS_Status == 1){
-			color == 0x07E0;
+			color == RGB565_GREEN;
 		}else{
-			color == 0xf800;
+			color == RGB565_GREEN;
 		}
 
 	}
+
     BMS_Status = 0;
     MC_Status = 0;
     Array_Status = 0;
@@ -346,6 +347,22 @@ void StartTask05(void *argument)
     old_BMS_Status = 0;
     old_MC_Status = 0;
     old_Array_Status = 0;
+
+	// temp debug stuff
+	if (outputPortState & OUTPUT_HORN_CTRL)
+		screen.FillCircle(150, 120, 10, RGB565_GREEN);
+	else
+		screen.FillCircle(150, 120, 10, RGB565_RED);
+
+	if (outputPortState & OUTPUT_FAN_CTRL)
+		screen.FillCircle(235, 120, 10, RGB565_GREEN);
+	else	
+		screen.FillCircle(235, 120, 10, RGB565_RED);
+
+	if (outputPortState & OUTPUT_L_HEAD_CTRL)
+		screen.FillCircle(70, 120, 10, RGB565_GREEN);
+	else
+		screen.FillCircle(70, 120, 10, RGB565_RED);
 
     osDelay(100);
   }
@@ -431,12 +448,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	if (huart->Instance == UART4)
   	{
 		// uart data for lights (blinkers)
-		if (uart_rx & BUTTON_LEFT_TURN)
+		if (uart_rx & BUTTON_HAZARD)
+			lightState = LIGHTS_HAZARD;
+		else if (uart_rx & BUTTON_LEFT_TURN)
 			lightState = LIGHTS_LEFT;
 		else if (uart_rx & BUTTON_RIGHT_TURN)
-			lightState = LIGHTS_NONE;
-		else if (uart_rx & BUTTON_HAZARD)
-			lightState = LIGHTS_HAZARD;
+			lightState = LIGHTS_RIGHT;
 		else
 			lightState = LIGHTS_NONE;
 

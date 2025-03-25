@@ -164,7 +164,6 @@ int main(void)
   CPP_UserSetup();
 
   HAL_CAN_Start(&hcan1);
-  HAL_UART_Init(&huart4);
 
   /* USER CODE END 2 */
 
