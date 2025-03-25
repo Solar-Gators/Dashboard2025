@@ -1,4 +1,5 @@
 #include "User.hpp"
+#include "sg_can.h"
 
 
 TCAL9538RSVR U5; // input 1
@@ -112,6 +113,8 @@ void StartTask02(void *argument)
 	uint64_t messages_sent = 0;
 	static uint8_t update_cc = 0;
 
+	CANFrame ADCMessage(0, 0, 2, 8);
+
 	CAN_TxHeaderTypeDef TxHeader;
 	uint8_t TxData[8] = { 0 };
 	uint32_t TxMailbox = { 0 };
@@ -129,7 +132,9 @@ void StartTask02(void *argument)
 
 
   	  // Transmit over CAN
-  	  HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+  //HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+  ADCMessage.LoadData(TxData, 8);
+  Controller.Send(&ADCMessage);
 
 
   for (;;)
@@ -177,18 +182,20 @@ void StartTask02(void *argument)
 	//Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
     // Wait until the ADC DMA completes
 	  // Send CAN messages
-	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
-	  HAL_StatusTypeDef status;
-	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
-	  messages_sent++;
-	  if (status == HAL_ERROR)
-	  {
-		  Error_Handler();
-	  }
-	  else if (status == HAL_BUSY)
-	  {
-		  HAL_CAN_BUSY++;
-	  }
+//	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+//	  HAL_StatusTypeDef status;
+//	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+//	  messages_sent++;
+//	  if (status == HAL_ERROR)
+//	  {
+//		  Error_Handler();
+//	  }
+//	  else if (status == HAL_BUSY)
+//	  {
+//		  HAL_CAN_BUSY++;
+//	  }
+	ADCMessage.LoadData(TxData, 8);
+	Controller.Send(&ADCMessage);
     osDelay(20);
   }
   /* USER CODE END StartTask02 */
@@ -202,6 +209,8 @@ void StartTask03(void *argument)
 	int HAL_CAN_BUSY = 0;
 	uint64_t messages_sent = 0;
 
+	CANFrame GPIOMessage(0x7FF, 0, 2, 8);
+
 	CAN_TxHeaderTypeDef TxHeader;
 	uint8_t TxData[8] = { 0 };
 	uint32_t TxMailbox = { 0 };
@@ -213,6 +222,7 @@ void StartTask03(void *argument)
 	TxData[0] = 1;
 
 	Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
+	GPIOMessage.LoadData(TxData);
 
 	/* Infinite loop */
 	for(;;)
@@ -231,18 +241,19 @@ void StartTask03(void *argument)
 	  }
 
 	  // Send CAN messages
-	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
-	  HAL_StatusTypeDef status;
-	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
-	  messages_sent++;
-	  if (status == HAL_ERROR)
-	  {
-		  Error_Handler();
-	  }
-	  else if (status == HAL_BUSY)
-	  {
-		  HAL_CAN_BUSY++;
-	  }
+//	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+//	  HAL_StatusTypeDef status;
+//	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+//	  messages_sent++;
+//	  if (status == HAL_ERROR)
+//	  {
+//		  Error_Handler();
+//	  }
+//	  else if (status == HAL_BUSY)
+//	  {
+//		  HAL_CAN_BUSY++;
+//	  }
+	  Controller.Send(&GPIOMessage);
 	  osDelay(50);
   }
   /* USER CODE END StartTask03 */

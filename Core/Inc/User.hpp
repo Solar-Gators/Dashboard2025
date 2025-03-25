@@ -10,6 +10,7 @@
 #include "TCAL9538RSVR.h"
 #include "defines.h"
 #include "ILI9341.hpp"
+#include "sg_can.h"
 
 #define ADC_BUF_LEN 10 // ADC DMA Buffer size
 
@@ -24,6 +25,7 @@ extern "C" DMA_HandleTypeDef hdma_adc1;
 extern "C" CAN_HandleTypeDef hcan1;
 extern "C" CAN_HandleTypeDef hcan2;
 extern "C" UART_HandleTypeDef huart4;
+extern "C" CANController Controller;
 
 
 void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2);
