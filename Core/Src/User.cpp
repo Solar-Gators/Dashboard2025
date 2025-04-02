@@ -57,8 +57,8 @@ void CPP_UserSetup(void) {
     if (TCAL9538RSVR_INIT(&U7, &hi2c4, 0x00, 0b00000000, 0b00000000) != HAL_OK) { Error_Handler(); } // output
 
     // set outputs to low to start
-	outputPortState = ~outputPortState;
-    TCAL9538RSVR_SetOutput(&U7, &outputPortState);
+	uint8_t inverted = ~outputPortState;
+    TCAL9538RSVR_SetOutput(&U7, &inverted);
 
 	HAL_UART_Receive_IT(&huart4, &uart_rx, 1); // enable uart interrupt
 
@@ -270,17 +270,18 @@ void StartTask04(void *argument)
     if (currentTick - lastBlinkTime > blinkInterval)
     {
       lastBlinkTime = currentTick;
-      if (lightState == LIGHTS_LEFT)
+      if (lightState == LIGHTS_HAZARD)
+        outputPortState ^= (OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
+      else if (lightState == LIGHTS_LEFT)
         outputPortState ^= OUTPUT_FL_LIGHT_CTRL;
       else if (lightState == LIGHTS_RIGHT)
         outputPortState ^= OUTPUT_FR_LIGHT_CTRL;
-      else if (lightState == LIGHTS_HAZARD)
-        outputPortState ^= (OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
       else if (lightState == LIGHTS_NONE)
         outputPortState &= ~(OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
     }
 
-    if(TCAL9538RSVR_SetOutput(&U7, &outputPortState) != HAL_OK)
+	uint8_t inverted = ~outputPortState;
+    if(TCAL9538RSVR_SetOutput(&U7, &inverted) != HAL_OK)
     {
     	Error_Handler();
     }
@@ -476,8 +477,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			lightState = LIGHTS_LEFT;
 		else if (uart_rx & BUTTON_RIGHT_TURN)
 			lightState = LIGHTS_RIGHT;
-		else
+		else {
 			lightState = LIGHTS_NONE;
+			outputPortState &= ~(OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
+		}
 
 		// if headlight should be on  
 		if (uart_rx & BUTTON_HEADLIGHTS)
@@ -486,10 +489,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			outputPortState &= ~(OUTPUT_R_HEAD_CTRL | OUTPUT_L_HEAD_CTRL);
 
 		// if display should be on 
+		/*
 		if (uart_rx & BUTTON_DISPLAY)
 			outputPortState |= OUTPUT_FL_LIGHT_CTRL;
 		else
 			outputPortState &= ~OUTPUT_FL_LIGHT_CTRL;
+		*/
 
 		// if horn should be on
 		if (uart_rx & BUTTON_HORN)

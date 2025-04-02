@@ -26,8 +26,8 @@
 #define BUTTON_PTT_POS           4
 
 // GPIO expander output mappings (TCAL9538)
-#define OUTPUT_HORN_CTRL        (1 << 0)
-#define OUTPUT_FAN_CTRL         (1 << 1)
+#define OUTPUT_HORN_CTRL        (1 << 1)
+#define OUTPUT_FAN_CTRL         (1 << 0)
 #define OUTPUT_L_HEAD_CTRL      (1 << 2)
 #define OUTPUT_R_HEAD_CTRL      (1 << 3)
 #define OUTPUT_FR_LIGHT_CTRL    (1 << 4)
