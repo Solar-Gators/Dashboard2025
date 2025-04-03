@@ -2,6 +2,7 @@
 
 #include "defines.h"
 #include "TCAL9538RSVR.h"
+#include "ILI9341.hpp"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -25,6 +26,11 @@ struct DashboardState {
     uint8_t headlightState = 0;
     uint8_t pttState = 0;
     uint8_t displayState = 0;
+
+    // only have these as debugging for the screen, only wanna write to screen when they are updated/changed
+    uint8_t oldHornState = 0;
+    uint8_t oldFanState = 0;
+    uint8_t oldHeadlightState = 0;
 
     // other system statuses
     uint8_t bmsStatus = 0;

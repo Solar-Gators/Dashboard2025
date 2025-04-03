@@ -1,6 +1,6 @@
 Core/Src/Drivers/ILI9341.o: ../Core/Src/Drivers/ILI9341.cpp \
- ../Core/Src/Drivers/ILI9341.hpp ../Core/Inc/main.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
+ C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp \
+ ../Core/Inc/main.h ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
  ../Core/Inc/stm32l4xx_hal_conf.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_def.h \
@@ -34,7 +34,8 @@ Core/Src/Drivers/ILI9341.o: ../Core/Src/Drivers/ILI9341.cpp \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
- ../Core/Inc/Drivers/TCAL9538RSVR.h ../Core/Src/Drivers/ILI9341_CMD.hpp \
+ ../Core/Inc/Drivers/TCAL9538RSVR.h \
+ C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341_CMD.hpp \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
  ../Core/Inc/FreeRTOSConfig.h \
@@ -47,7 +48,7 @@ Core/Src/Drivers/ILI9341.o: ../Core/Src/Drivers/ILI9341.cpp \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
  ../Core/Src/Drivers/GfxFont.h
-../Core/Src/Drivers/ILI9341.hpp:
+C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp:
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -84,7 +85,7 @@ Core/Src/Drivers/ILI9341.o: ../Core/Src/Drivers/ILI9341.cpp \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
 ../Core/Inc/Drivers/TCAL9538RSVR.h:
-../Core/Src/Drivers/ILI9341_CMD.hpp:
+C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341_CMD.hpp:
 ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
 ../Core/Inc/FreeRTOSConfig.h:

@@ -2,6 +2,8 @@
 
 void DashboardState::reset() {
     lightState = LIGHTS_NONE;
+    oldLightState = LIGHTS_NONE;
+
     outputPortState = 0;
     hornState = 0;
     fanState = 0;
@@ -12,6 +14,10 @@ void DashboardState::reset() {
     bmsStatus = 0;
     mcStatus = 0;
     arrayStatus = 0;
+
+    old_bmsStatus = 0;
+    old_mcStatus = 0;
+    old_arrayStatus = 0;
 
     uart_rx = 0;
     old_uart_rx = 0;

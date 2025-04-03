@@ -240,12 +240,18 @@ void StartTask04(void *argument)
 
     if (currentTick - lastBlinkTime > blinkInterval)
     {
-      lastBlinkTime = currentTick;
-	  dashboardState.blinkLights();
-    }
+      	lastBlinkTime = currentTick;
+		// enter critical section because we do read-modify-write operations in that function
+		DASHBOARD_CRITICAL(
+			dashboardState.blinkLights()
+	  	);
+	}
 
 	if (dashboardState.updateRequested) {
-		dashboardState.updateFromUART(); // update dashboard state from UART
+		// enter critical section because we do read-modify-write operations in that function
+		DASHBOARD_CRITICAL(
+			dashboardState.updateFromUART()
+		);
 		dashboardState.updateRequested = 0; // reset update requested flag
 	}
 
@@ -259,12 +265,37 @@ void StartTask04(void *argument)
 
 void StartTask05(void *argument)
 {
-  /* USER CODE BEGIN StartTask05 */
-  uint16_t color = 32;
+	/* USER CODE BEGIN StartTask05 */
+	uint16_t color;
+	bool lightStateChanged = false;
+	bool bmsStatusChanged = false;
+	bool mcStatusChanged = false;
+	bool arrayStatusChanged = false;
+	bool hornStateChanged = false;
+	bool fanStateChanged = false;
+	bool headlightStateChanged = false;
   /* Infinite loop */
   for(;;)
   {
-	if(dashboardState.oldLightState != dashboardState.lightState){
+	DASHBOARD_CRITICAL( // critical region for all of these read-read operations that are not atomic
+		lightStateChanged = dashboardState.oldLightState != dashboardState.lightState;
+		bmsStatusChanged = dashboardState.old_bmsStatus != dashboardState.bmsStatus;
+		mcStatusChanged = dashboardState.old_mcStatus != dashboardState.mcStatus;
+		arrayStatusChanged = dashboardState.old_arrayStatus != dashboardState.arrayStatus;
+		hornStateChanged = dashboardState.oldHornState != dashboardState.hornState;
+		fanStateChanged = dashboardState.oldFanState != dashboardState.fanState;
+		headlightStateChanged = dashboardState.oldHeadlightState != dashboardState.headlightState;
+
+		dashboardState.oldLightState = dashboardState.lightState;
+		dashboardState.old_bmsStatus = dashboardState.bmsStatus;
+		dashboardState.old_mcStatus = dashboardState.mcStatus;
+		dashboardState.old_arrayStatus = dashboardState.arrayStatus;
+		dashboardState.oldHornState = dashboardState.hornState;
+		dashboardState.oldFanState = dashboardState.fanState;
+		dashboardState.oldHeadlightState = dashboardState.headlightState;
+	); // end critical section
+
+	if(lightStateChanged){
 		HAL_Delay(1);
 		if(dashboardState.lightState == LIGHTS_LEFT){
 			color = RGB565_GREEN;
@@ -295,42 +326,39 @@ void StartTask05(void *argument)
 			color = RGB565_WHITE;
 			screen.FillCircle(300, 20, 10, color);
 		}
-		dashboardState.oldLightState = dashboardState.lightState;
 	}
-	if(dashboardState.bmsStatus != dashboardState.old_bmsStatus){
-		if (dashboardState.bmsStatus == 1) color == RGB565_GREEN;
-		else color == RGB565_GREEN;
+	if(bmsStatusChanged){
+		if (dashboardState.bmsStatus) color = RGB565_GREEN;
+		else color = RGB565_RED;
 		screen.FillCircle(70, 210, 10, color);
-		dashboardState.old_bmsStatus = dashboardState.bmsStatus;
 	}
-	if(dashboardState.mcStatus != dashboardState.old_mcStatus){
-		if (dashboardState.mcStatus == 1) color == RGB565_GREEN;
-		else color == RGB565_GREEN;
+	if(mcStatusChanged){
+		if (dashboardState.mcStatus) color = RGB565_GREEN;
+		else color = RGB565_RED;
 		screen.FillCircle(150, 210, 10, color);
-		dashboardState.old_mcStatus = dashboardState.mcStatus;
 	}
-	if(dashboardState.arrayStatus != dashboardState.old_arrayStatus){
-		if (dashboardState.arrayStatus == 1) color == RGB565_GREEN;
-		else color == RGB565_GREEN;
+	if(arrayStatusChanged){
+		if (dashboardState.arrayStatus) color = RGB565_GREEN;
+		else color = RGB565_RED;
 		screen.FillCircle(235, 210, 10, color);
-		dashboardState.old_arrayStatus = dashboardState.arrayStatus;
 	}
 
 	// temp debug stuff
-	if (dashboardState.hornState)
-		screen.FillCircle(150, 120, 10, RGB565_GREEN);
-	else
-		screen.FillCircle(150, 120, 10, RGB565_RED);
-
-	if (dashboardState.fanState)
-		screen.FillCircle(235, 120, 10, RGB565_GREEN);
-	else	
-		screen.FillCircle(235, 120, 10, RGB565_RED);
-
-	if (dashboardState.headlightState)
-		screen.FillCircle(70, 120, 10, RGB565_GREEN);
-	else
-		screen.FillCircle(70, 120, 10, RGB565_RED);
+	if (hornStateChanged) {
+		if (dashboardState.hornState) color = RGB565_GREEN;
+		else color = RGB565_RED;
+		screen.FillCircle(150, 120, 10, color);
+	}
+	if (fanStateChanged) {
+		if (dashboardState.fanState) color = RGB565_GREEN;
+		else color = RGB565_RED;
+		screen.FillCircle(235, 120, 10, color);
+	}
+	if (headlightStateChanged) {
+		if (dashboardState.headlightState) color = RGB565_GREEN;
+		else color = RGB565_RED;
+		screen.FillCircle(70, 120, 10, color);
+	}
 
     osDelay(100);
   }
