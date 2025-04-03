@@ -4,13 +4,11 @@
 #include <stdbool.h>
 
 // Button bitmask definitions (UART input from steering wheel)
-// left side going down
-#define BUTTON_LEFT_TURN     (1 << 3)
+#define BUTTON_LEFT_TURN     (1 << 3) // left side going down
 #define BUTTON_HAZARD        (1 << 2)
 #define BUTTON_DISPLAY       (1 << 1)
 #define BUTTON_FAN           (1 << 0)
-// right side going down
-#define BUTTON_RIGHT_TURN    (1 << 7)
+#define BUTTON_RIGHT_TURN    (1 << 7) // right side going down
 #define BUTTON_HEADLIGHTS    (1 << 6)
 #define BUTTON_HORN          (1 << 5)
 #define BUTTON_PTT           (1 << 4)
@@ -41,12 +39,12 @@
 #define OUTPUT_FR_LIGHT_CTRL_POS    4
 #define OUTPUT_FL_LIGHT_CTRL_POS    5
 
-// Enum for state of blinkers
-typedef enum {
-    LIGHTS_NONE = 0,
-    LIGHTS_LEFT = 1,
-    LIGHTS_RIGHT = 2,
-    LIGHTS_HAZARD = 3
-} LightState;
+
+#define DASHBOARD_CRITICAL(code_block) \
+    do {                               \
+        taskENTER_CRITICAL();          \
+        code_block;                    \
+        taskEXIT_CRITICAL();           \
+    } while (0)
 
 #endif // DASHBOARD_DEFINES_H
