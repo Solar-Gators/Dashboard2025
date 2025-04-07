@@ -23,8 +23,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "TCAL9538RSVR.h"
-#include "defines.h"
 #include "User.hpp"
 #include "sg_can.h"
 //#include "sg_can.hpp"
@@ -37,11 +35,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
-// Returns 0 or 1 if bit at pos in var is set
-#define CHECK_BIT(var,pos) !!((var) & (1<<(pos)))
-
-
 
 /* USER CODE END PD */
 
@@ -105,17 +98,6 @@ const osSemaphoreAttr_t CAN_Mutex_attributes = {
   .name = "CAN_Mutex"
 };
 /* USER CODE BEGIN PV */
-
-
-
-
-
-
-
-
-
- // variable to store ADC DMA Buffers
-
 
 /* USER CODE END PV */
 
@@ -182,7 +164,6 @@ int main(void)
   MX_CAN2_Init();
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
-
   CPP_UserSetup();
 
 
@@ -693,46 +674,21 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartTask01 */
-/**
-  * @brief  Function implementing the HeartBeat thread.
-  * @param  argument: Not used
-  * @retval None
-  */
 /* USER CODE END Header_StartTask01 */
 
 
 /* USER CODE BEGIN Header_StartTask02 */
-
-
-
-
-/**
-* @brief Function implementing the Critical_Inputs thread.
-* @param argument: Not used
-* @retval None
-*/
 /* USER CODE END Header_StartTask02 */
 
 
 /* USER CODE BEGIN Header_StartTask03 */
-/**
-* @brief Function implementing the ReadIOExpander thread.
-* @param argument: Not used
-* @retval None
-*/
 /* USER CODE END Header_StartTask03 */
 
 
 /* USER CODE BEGIN Header_StartTask04 */
-/**
-* @brief Function implementing the Outputs_Control thread.
-* @param argument: Not used
-* @retval None
-*/
 /* USER CODE END Header_StartTask04 */
 
 

@@ -1,31 +1,50 @@
 #ifndef DASHBOARD_DEFINES_H
 #define DASHBOARD_DEFINES_H
 
-// Button bitmask definitions
-// Bit masks of what each bit in the uart message from the steering wheel does
-#define BUTTON_LEFT_TURN    (1 << 0)  // Bit 0
-#define BUTTON_RIGHT_TURN   (1 << 1)  // Bit 1
-#define BUTTON_HAZARD       (1 << 2)  // Bit 2
-#define BUTTON_HEADLIGHTS   (1 << 3)  // Bit 3
-#define BUTTON_DISPLAY      (1 << 4)  // Bit 4
-#define BUTTON_HORN         (1 << 5)  // Bit 5
-#define BUTTON_PTT          (1 << 6)  // Bit 6
+#include <stdbool.h>
 
-// GPIO expander output mappings
-// Bit masks of bits in the output ports from the expander
-#define OUTPUT_HORN_CTRL        (1 << 0) // P0
-#define OUTPUT_FAN_CTRL         (1 << 1) // P1
-#define OUTPUT_R_HEAD_CTRL      (1 << 3) // P2
-#define OUTPUT_L_HEAD_CTRL      (1 << 2) // P3
-#define OUTPUT_FL_LIGHT_CTRL    (1 << 4) // P4
-#define OUTPUT_FR_LIGHT_CTRL    (1 << 5) // P5
+// Button bitmask definitions (UART input from steering wheel)
+#define BUTTON_LEFT_TURN     (1 << 3) // left side going down
+#define BUTTON_HAZARD        (1 << 2)
+#define BUTTON_DISPLAY       (1 << 1)
+#define BUTTON_FAN           (1 << 0)
+#define BUTTON_RIGHT_TURN    (1 << 7) // right side going down
+#define BUTTON_HEADLIGHTS    (1 << 6)
+#define BUTTON_HORN          (1 << 5)
+#define BUTTON_PTT           (1 << 4)
 
-// Enum for state of lights
-typedef enum {
-    LIGHTS_NONE = 0,
-    LIGHTS_LEFT = 1,
-    LIGHTS_RIGHT = 2,
-    LIGHTS_HAZARD = 3
-} LightState;
+// Button positions (UART input from steering wheel)
+#define BUTTON_LEFT_TURN_POS     3
+#define BUTTON_HAZARD_POS        2
+#define BUTTON_DISPLAY_POS       1
+#define BUTTON_FAN_POS           0
+#define BUTTON_RIGHT_TURN_POS    7
+#define BUTTON_HEADLIGHTS_POS    6
+#define BUTTON_HORN_POS          5
+#define BUTTON_PTT_POS           4
+
+// GPIO expander output mappings (TCAL9538)
+#define OUTPUT_HORN_CTRL        (1 << 1)
+#define OUTPUT_FAN_CTRL         (1 << 0)
+#define OUTPUT_L_HEAD_CTRL      (1 << 2)
+#define OUTPUT_R_HEAD_CTRL      (1 << 3)
+#define OUTPUT_FR_LIGHT_CTRL    (1 << 4)
+#define OUTPUT_FL_LIGHT_CTRL    (1 << 5)
+
+// GPIO expander output positions (TCAL9538)
+#define OUTPUT_HORN_CTRL_POS        0
+#define OUTPUT_FAN_CTRL_POS         1
+#define OUTPUT_L_HEAD_CTRL_POS      2
+#define OUTPUT_R_HEAD_CTRL_POS      3
+#define OUTPUT_FR_LIGHT_CTRL_POS    4
+#define OUTPUT_FL_LIGHT_CTRL_POS    5
+
+
+#define DASHBOARD_CRITICAL(code_block) \
+    do {                               \
+        taskENTER_CRITICAL();          \
+        code_block;                    \
+        taskEXIT_CRITICAL();           \
+    } while (0)
 
 #endif // DASHBOARD_DEFINES_H

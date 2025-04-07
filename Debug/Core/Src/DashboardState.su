@@ -1,0 +1,4 @@
+../Core/Src/DashboardState.cpp:3:6:void DashboardState::reset()	16	static
+../Core/Src/DashboardState.cpp:27:6:void DashboardState::updateFromUART()	16	static
+../Core/Src/DashboardState.cpp:88:19:HAL_StatusTypeDef DashboardState::writeToPort(TCAL9538RSVR&)	24	static
+../Core/Src/DashboardState.cpp:93:6:void DashboardState::blinkLights()	16	static

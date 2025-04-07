@@ -1,6 +1,7 @@
 #include "User.hpp"
 #include "sg_can.h"
 
+#include "DashboardState.hpp"
 
 TCAL9538RSVR U5; // input 1
 TCAL9538RSVR U16; // input 2
@@ -11,82 +12,58 @@ volatile uint8_t dma_flag; // flag for DMA start and stop
 static uint8_t cc_enable;
 static uint8_t GPIO_Interrupt_Triggered;
 
+DashboardState dashboardState; // Dashboard state object
 
-
-uint8_t outputPortState; // variable with state of output port
-uint8_t uart_rx; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
-uint8_t prev_uart_rx; // variable to help with toggle logic
-LightState lightState;
-LightState oldLightsState;
-uint8_t hornState;
-
-uint8_t BMS_Status;
-uint8_t MC_Status;
-uint8_t Array_Status;
-
-uint8_t old_BMS_Status;
-uint8_t old_MC_Status;
-uint8_t old_Array_Status;
-
-uint8_t UART4_rxBuffer[20];
 ILI9341 screen(320, 240);
 
 void CPP_UserSetup(void) {
     // Make sure that timer priorities are configured correctly
     HAL_Delay(10);
 
-
-
     dma_flag = 0;
     cc_enable = 0;
 
-    hornState = 0;
-
-    BMS_Status = 0;
-    MC_Status = 0;
-    Array_Status = 0;
-
-    old_BMS_Status = 0;
-    old_MC_Status = 0;
-    old_Array_Status = 0;
-
-    outputPortState = 0; // variable with state of output port
-    uart_rx = 0; // variable for holding the recieved data over uart from steering wheel, its only sending one byte
-    prev_uart_rx = 0; // variable to help with toggle logic
-    lightState = LIGHTS_NONE;
-    oldLightsState = LIGHTS_NONE;
+	dashboardState.reset(); // reset dashboard state
 
     if (TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0xFF, 0x00) != HAL_OK) { Error_Handler(); } // inputs
-      //if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b00111111, 0b11000000) != HAL_OK) { Error_Handler(); }
+    //if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b00111111, 0b11000000) != HAL_OK) { Error_Handler(); }
     if (TCAL9538RSVR_INIT(&U7, &hi2c4, 0x00, 0b00000000, 0b00000000) != HAL_OK) { Error_Handler(); } // output
 
-      // set outputs to low to start
-    TCAL9538RSVR_SetOutput(&U7, &outputPortState);
+    // set outputs to low to start
+	if (dashboardState.writeToPort(U7) != HAL_OK) { Error_Handler(); }
 
+	// Set up UART4 for receiving data from the steering wheel
+	HAL_UART_Receive_IT(&huart4, &dashboardState.uart_rx, 1); // enable uart interrupt
 
     screen.Init();
     screen.SetRotation(3);
-    screen.ClearScreen(0xFFFF);
+    screen.ClearScreen(RGB565_WHITE);
 
-    uint16_t x_text = 80;
+    uint16_t x_text = 70;
     uint16_t y_text = 10;
-    const char* str1 = "UF Solar Gators\0";
-    uint16_t color = 32;
+    const char* str1 = "UF Solar Gators :)\0";
     screen.SetTextSize(2);
-    screen.DrawText(x_text, y_text, str1, color);
+    screen.DrawText(x_text, y_text, str1, RGB565_BLACK);
 
     x_text = 55;
     y_text = 170;
     const char* str2 = "BMS    MC    Array\0";
 
     screen.SetTextSize(2);
-    screen.DrawText(x_text, y_text, str2, color);
+    screen.DrawText(x_text, y_text, str2, RGB565_BLACK);
 
-    color  = 0xf800;
-    screen.FillCircle(70, 210, 10, color);
-    screen.FillCircle(150, 210, 10, color);
-    screen.FillCircle(235, 210, 10, color);
+    screen.FillCircle(70, 210, 10, RGB565_RED);
+    screen.FillCircle(150, 210, 10, RGB565_RED);
+    screen.FillCircle(235, 210, 10, RGB565_RED);
 
+	// temp to help debug  
+	const char* str3 = "HedLit Horn  Fan\0";
+    screen.SetTextSize(2);
+    screen.DrawText(55, 80, str3, RGB565_BLACK);  // Labels above the circles
+
+    screen.FillCircle(70, 120, 10, RGB565_RED);   // Headlights
+    screen.FillCircle(150, 120, 10, RGB565_RED);  // Horn
+    screen.FillCircle(235, 120, 10, RGB565_RED);  // Fan
 }
 
 
@@ -265,9 +242,6 @@ void StartTask04(void *argument)
 {
   /* USER CODE BEGIN StartTask04 */
 
-
-  HAL_UART_Receive_IT(&huart4, UART4_rxBuffer, 1); // enables uart interrupt, it will call the interrupt when one byte is recieved
-
   uint32_t lastBlinkTime = HAL_GetTick();
   const uint32_t blinkInterval = 500;
 
@@ -275,33 +249,26 @@ void StartTask04(void *argument)
   for(;;)
   {
 
-    // blinking logic needs to be done here now
-    // use lightState variable to see what should be turned on and then
-    // update outputPortState
-
     uint32_t currentTick = HAL_GetTick();
 
     if (currentTick - lastBlinkTime > blinkInterval)
     {
-      lastBlinkTime = currentTick;
-      if (lightState == LIGHTS_LEFT)
-        outputPortState ^= OUTPUT_FL_LIGHT_CTRL;
-      else if (lightState == LIGHTS_RIGHT)
-        outputPortState ^= OUTPUT_FR_LIGHT_CTRL;
-      else if (lightState == LIGHTS_HAZARD)
-        outputPortState ^= (OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
-      else if (lightState == LIGHTS_NONE)
-        outputPortState &= ~(OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
-    }
+      	lastBlinkTime = currentTick;
+		// enter critical section because we do read-modify-write operations in that function
+		DASHBOARD_CRITICAL(
+			dashboardState.blinkLights()
+	  	);
+	}
 
-    if(hornState == 1){
+	if (dashboardState.updateRequested) {
+		// enter critical section because we do read-modify-write operations in that function
+		DASHBOARD_CRITICAL(
+			dashboardState.updateFromUART()
+		);
+		dashboardState.updateRequested = 0; // reset update requested flag
+	}
 
-    }
-
-    if(TCAL9538RSVR_SetOutput(&U7, &outputPortState) != HAL_OK)
-    {
-    	Error_Handler();
-    }
+	if (dashboardState.writeToPort(U7) != HAL_OK) { Error_Handler(); } // write to output port
 
     osDelay(100);
   }
@@ -311,62 +278,100 @@ void StartTask04(void *argument)
 
 void StartTask05(void *argument)
 {
-  /* USER CODE BEGIN StartTask05 */
-  uint16_t color = 32;
+	/* USER CODE BEGIN StartTask05 */
+	uint16_t color;
+	bool lightStateChanged = false;
+	bool bmsStatusChanged = false;
+	bool mcStatusChanged = false;
+	bool arrayStatusChanged = false;
+	bool hornStateChanged = false;
+	bool fanStateChanged = false;
+	bool headlightStateChanged = false;
   /* Infinite loop */
   for(;;)
   {
-	if(oldLightsState != lightState){
+	DASHBOARD_CRITICAL( // critical region for all of these read-read operations that are not atomic
+		lightStateChanged = dashboardState.oldLightState != dashboardState.lightState;
+		bmsStatusChanged = dashboardState.old_bmsStatus != dashboardState.bmsStatus;
+		mcStatusChanged = dashboardState.old_mcStatus != dashboardState.mcStatus;
+		arrayStatusChanged = dashboardState.old_arrayStatus != dashboardState.arrayStatus;
+		hornStateChanged = dashboardState.oldHornState != dashboardState.hornState;
+		fanStateChanged = dashboardState.oldFanState != dashboardState.fanState;
+		headlightStateChanged = dashboardState.oldHeadlightState != dashboardState.headlightState;
+
+		dashboardState.oldLightState = dashboardState.lightState;
+		dashboardState.old_bmsStatus = dashboardState.bmsStatus;
+		dashboardState.old_mcStatus = dashboardState.mcStatus;
+		dashboardState.old_arrayStatus = dashboardState.arrayStatus;
+		dashboardState.oldHornState = dashboardState.hornState;
+		dashboardState.oldFanState = dashboardState.fanState;
+		dashboardState.oldHeadlightState = dashboardState.headlightState;
+	); // end critical section
+
+	if(lightStateChanged){
 		HAL_Delay(1);
-		if(lightState == LIGHTS_LEFT){
-			color = 0x07E0;
+		if(dashboardState.lightState == LIGHTS_LEFT){
+			color = RGB565_GREEN;
 			screen.FillCircle(20, 20, 10, color);
 
-			color = 0xFFFF;
+			color = RGB565_WHITE;
 			screen.FillCircle(300, 20, 10, color);
 		}
-		if(lightState == LIGHTS_RIGHT){
-			color = 0xFFFF;
+		if(dashboardState.lightState == LIGHTS_RIGHT){
+			color = RGB565_WHITE;
 			screen.FillCircle(20, 20, 10, color);
 
-			color = 0x07E0;
+			color = RGB565_GREEN;
 			screen.FillCircle(300, 20, 10, color);
 		}
-		if(lightState == LIGHTS_HAZARD){
-			color = 0x07E0;
+		if(dashboardState.lightState == LIGHTS_HAZARD){
+			color = RGB565_GREEN;
 			screen.FillCircle(20, 20, 10, color);
 
-			color = 0x07E0;
+			color = RGB565_GREEN;
 			screen.FillCircle(300, 20, 10, color);
 		}
-		if(lightState == LIGHTS_NONE){
+		if(dashboardState.lightState == LIGHTS_NONE){
 
-			color = 0xFFFF;
+			color = RGB565_WHITE;
 			screen.FillCircle(20, 20, 10, color);
 
-			color = 0xFFFF;
+			color = RGB565_WHITE;
 			screen.FillCircle(300, 20, 10, color);
 		}
-		oldLightsState = lightState;
 	}
-	if(BMS_Status != old_BMS_Status){
-		if(BMS_Status == 1){
-			color == 0x07E0;
-		}else{
-			color == 0xf800;
-		}
-
+	if(bmsStatusChanged){
+		if (dashboardState.bmsStatus) color = RGB565_GREEN;
+		else color = RGB565_RED;
+		screen.FillCircle(70, 210, 10, color);
 	}
-    BMS_Status = 0;
-    MC_Status = 0;
-    Array_Status = 0;
+	if(mcStatusChanged){
+		if (dashboardState.mcStatus) color = RGB565_GREEN;
+		else color = RGB565_RED;
+		screen.FillCircle(150, 210, 10, color);
+	}
+	if(arrayStatusChanged){
+		if (dashboardState.arrayStatus) color = RGB565_GREEN;
+		else color = RGB565_RED;
+		screen.FillCircle(235, 210, 10, color);
+	}
 
-    old_BMS_Status = 0;
-    old_MC_Status = 0;
-    old_Array_Status = 0;
-
-
-
+	// temp debug stuff
+	if (hornStateChanged) {
+		if (dashboardState.hornState) color = RGB565_GREEN;
+		else color = RGB565_RED;
+		screen.FillCircle(150, 120, 10, color);
+	}
+	if (fanStateChanged) {
+		if (dashboardState.fanState) color = RGB565_GREEN;
+		else color = RGB565_RED;
+		screen.FillCircle(235, 120, 10, color);
+	}
+	if (headlightStateChanged) {
+		if (dashboardState.headlightState) color = RGB565_GREEN;
+		else color = RGB565_RED;
+		screen.FillCircle(70, 120, 10, color);
+	}
 
     osDelay(100);
   }
@@ -420,14 +425,39 @@ void Update_CAN_Message1(uint8_t* msg, uint8_t* Input1, uint8_t* Input2)
 	msg[1] ^= CHECK_BIT(risingEdges_flag1, 5) << 3; // MC
 	msg[1] ^= CHECK_BIT(risingEdges_flag1, 6) << 4; // Array
 	msg[1] ^= CHECK_BIT(risingEdges_flag1, 4) << 5; // Direction
-	//msg[1] |= CHECK_BIT(outputPortState, 5) << 6; // Horn
-	//msg[1] |= CHECK_BIT(outputPortState, 6) << 7; // PTT (push to talk)
 
+	//msg[2] ^= CHECK_BIT(risingEdges_flag1, 7) << 3; // BMS
 
-	//msg[2] |= CHECK_BIT(outputPortState, 2) << 0; // Blinkers
-	//msg[2] |= CHECK_BIT(outputPortState, 0) << 1; // Left Turn Signal
-	//msg[2] |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
-	msg[2] ^= CHECK_BIT(risingEdges_flag1, 7) << 3; // BMS
+	if (dashboardState.hornState) // Horn
+		msg[1] |= (1 << 6);
+	else
+		msg[1] &= ~(1 << 6);
+	if (dashboardState.pttState) // PTT (Push to Talk)
+		msg[1] |= (1 << 7);
+	else
+		msg[1] &= ~(1 << 7);
+
+	/*
+		NOTE:
+			currently sending state of turn signal, turn signal on or off
+			if wanting to send actual control of turn signal light, need to send outputPortState variable instead of lightState	
+	*/
+	if (dashboardState.lightState == LIGHTS_HAZARD) // Blinkers
+		msg[2] |= (1 << 0);
+	else
+		msg[2] &= ~(1 << 0);
+	if (dashboardState.lightState == LIGHTS_LEFT) // Left Turn
+		msg[2] |= (1 << 1);
+	else
+		msg[2] &= ~(1 << 1);
+	if (dashboardState.lightState == LIGHTS_RIGHT) // Right Turn
+		msg[2] |= (1 << 2);
+	else
+		msg[2] &= ~(1 << 2);
+	if (dashboardState.headlightState) // Headlights
+		msg[2] |= (1 << 3);
+	else
+		msg[2] &= ~(1 << 3);
 
 	// this flag enables cruise control which will be checked during throttle
 	// task to update the CC portion of this message
@@ -454,24 +484,15 @@ void CruiseControlManagement()
 }
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	HAL_UART_Receive_IT(&huart4, UART4_rxBuffer, 1); // reenables uart interrupt
-
-	if((UART4_rxBuffer[0] & 0b00001000) != 0x00){
-		lightState = LIGHTS_LEFT;
-	}else if((UART4_rxBuffer[0] & 0b10000000) != 0x00){
-		lightState = LIGHTS_RIGHT;
-	}else if((UART4_rxBuffer[0] & 0b01000000) != 0x00){
-		lightState = LIGHTS_HAZARD;
-	}else if((UART4_rxBuffer[0] & 0b11001000) == 0x00){
-		lightState = LIGHTS_NONE;
+	if (huart->Instance == UART4)
+  	{
+		if (dashboardState.uart_rx != dashboardState.old_uart_rx)
+		{
+			dashboardState.updateRequested = 1; // set flag to update dashboard state
+			dashboardState.old_uart_rx = dashboardState.uart_rx;
+		}
 	}
-
-	if((UART4_rxBuffer[0] & 0b00100000) != 0x00){
-		hornState = 0;
-	}else{
-		hornState = 1;
-	}
-
+	HAL_UART_Receive_IT(&huart4, &dashboardState.uart_rx, 1);
 }
 
 

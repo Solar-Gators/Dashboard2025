@@ -1,14 +1,14 @@
-../Core/Src/User.cpp:33:6:void CPP_UserSetup()	3
-../Core/Src/User.cpp:92:6:void StartTask01(void*)	1
-../Core/Src/User.cpp:105:6:void StartTask02(void*)	8
-../Core/Src/User.cpp:197:6:void StartTask03(void*)	7
-../Core/Src/User.cpp:252:6:void StartTask04(void*)	7
-../Core/Src/User.cpp:300:6:void StartTask05(void*)	6
-../Core/Src/User.cpp:350:6:void Update_CAN_Message1(uint8_t*, uint8_t*, uint8_t*)	1
-../Core/Src/User.cpp:410:6:void CruiseControlManagement()	1
-../Core/Src/User.cpp:423:6:void HAL_UART_RxCpltCallback(UART_HandleTypeDef*)	6
-../Core/Src/User.cpp:446:6:void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef*)	1
-../Core/Src/User.cpp:450:6:void HAL_GPIO_EXTI_Callback(uint16_t)	1
-../Core/Src/User.cpp:453:1:void __static_initialization_and_destruction_0(int, int)	5
-../Core/Src/User.cpp:453:1:cpp)	1
-../Core/Src/User.cpp:453:1:cpp)	1
+../Core/Src/User.cpp:17:6:void CPP_UserSetup()	4
+../Core/Src/User.cpp:68:6:void StartTask01(void*)	1
+../Core/Src/User.cpp:81:6:void StartTask02(void*)	8
+../Core/Src/User.cpp:173:6:void StartTask03(void*)	7
+../Core/Src/User.cpp:228:6:void StartTask04(void*)	4
+../Core/Src/User.cpp:266:6:void StartTask05(void*)	12
+../Core/Src/User.cpp:370:6:void Update_CAN_Message1(uint8_t*, uint8_t*, uint8_t*)	7
+../Core/Src/User.cpp:452:6:void CruiseControlManagement()	1
+../Core/Src/User.cpp:465:6:void HAL_UART_RxCpltCallback(UART_HandleTypeDef*)	3
+../Core/Src/User.cpp:479:6:void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef*)	1
+../Core/Src/User.cpp:483:6:void HAL_GPIO_EXTI_Callback(uint16_t)	1
+../Core/Src/User.cpp:486:1:void __static_initialization_and_destruction_0(int, int)	5
+../Core/Src/User.cpp:486:1:cpp)	1
+../Core/Src/User.cpp:486:1:cpp)	1
