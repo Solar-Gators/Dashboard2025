@@ -1,7 +1,11 @@
-../Core/Src/main.c:81:5:main	1
-../Core/Src/main.c:164:6:SystemClock_Config	4
-../Core/Src/main.c:209:13:MX_GPIO_Init	1
-../Core/Src/main.c:243:6:StartDefaultTask	1
-../Core/Src/main.c:262:6:StartTask02	1
-../Core/Src/main.c:281:6:HAL_TIM_PeriodElapsedCallback	2
-../Core/Src/main.c:298:6:Error_Handler	1
+../Core/Src/main.cpp:132:5:int main()	1
+../Core/Src/main.cpp:239:6:void SystemClock_Config()	4
+../Core/Src/main.cpp:284:13:void MX_ADC1_Init()	13
+../Core/Src/main.cpp:423:13:void MX_CAN1_Init()	2
+../Core/Src/main.cpp:460:13:void MX_CAN2_Init()	2
+../Core/Src/main.cpp:497:13:void MX_I2C4_Init()	4
+../Core/Src/main.cpp:545:13:void MX_UART4_Init()	2
+../Core/Src/main.cpp:578:13:void MX_DMA_Init()	1
+../Core/Src/main.cpp:596:13:void MX_GPIO_Init()	1
+../Core/Src/main.cpp:687:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	2
+../Core/Src/main.cpp:704:6:void Error_Handler()	1
