@@ -222,7 +222,7 @@ void StartTask03(void *argument)
 	TxData[0] = 1;
 
 	Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
-	GPIOMessage.LoadData(TxData);
+	GPIOMessage.LoadData(TxData, 8);
 
 	/* Infinite loop */
 	for(;;)
@@ -253,6 +253,7 @@ void StartTask03(void *argument)
 //	  {
 //		  HAL_CAN_BUSY++;
 //	  }
+	  GPIOMessage.LoadData(TxData, 8);
 	  Controller.Send(&GPIOMessage);
 	  osDelay(50);
   }
@@ -373,8 +374,10 @@ void StartTask05(void *argument)
 }
 
 
-
-void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
+/**
+ * @brief takes pointer to CAN msg and toggles button state on initial press
+ * */
+void Update_CAN_Message1(uint8_t* msg, uint8_t* Input1, uint8_t* Input2)
 {
 	/*
 	 * Byte 0:
@@ -403,32 +406,34 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	static uint8_t prev_input2 = 0;
 
 
-	flags[3] = 0;
-	flags[4] = 0;
-
-
 	// Detect rising edges for each flag
+	// prev input = 101  new input = 011 -> (010) & (011) = 010
 	uint8_t risingEdges_flag1 = (~prev_input1) & *Input1;
 	uint8_t risingEdges_flag2 = (~prev_input2) & *Input2;
 
+	// resulting rising edges are XOR'd with current state
+	// current state = 110 ^ 010 = 100
+	// thus the middle button is pressed down and current state is toggled
+	msg[1] ^= CHECK_BIT(risingEdges_flag2, 4) << 0; // Main
+	msg[1] ^= CHECK_BIT(risingEdges_flag2, 5) << 1; // Break
+	msg[1] ^= CHECK_BIT(risingEdges_flag2, 0) << 2; // Mode
+	msg[1] ^= CHECK_BIT(risingEdges_flag1, 5) << 3; // MC
+	msg[1] ^= CHECK_BIT(risingEdges_flag1, 6) << 4; // Array
+	msg[1] ^= CHECK_BIT(risingEdges_flag1, 4) << 5; // Direction
+	//msg[1] |= CHECK_BIT(outputPortState, 5) << 6; // Horn
+	//msg[1] |= CHECK_BIT(outputPortState, 6) << 7; // PTT (push to talk)
 
-	flags[1] ^= CHECK_BIT(risingEdges_flag2, 4) << 0; // Main
-	flags[1] ^= CHECK_BIT(risingEdges_flag2, 5) << 1; // Break
-	flags[1] ^= CHECK_BIT(risingEdges_flag2, 0) << 2; // Mode
-	flags[1] ^= CHECK_BIT(risingEdges_flag1, 5) << 3; // MC
-	flags[1] ^= CHECK_BIT(risingEdges_flag1, 6) << 4; // Array
-	flags[1] ^= CHECK_BIT(risingEdges_flag1, 4) << 5; // Extra 1
-	//flags[1] |= CHECK_BIT(outputPortState, 5) << 6; // Horn
-	//flags[1] |= CHECK_BIT(outputPortState, 6) << 7; // PTT (push to talk)
 
+	//msg[2] |= CHECK_BIT(outputPortState, 2) << 0; // Blinkers
+	//msg[2] |= CHECK_BIT(outputPortState, 0) << 1; // Left Turn Signal
+	//msg[2] |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
+	msg[2] ^= CHECK_BIT(risingEdges_flag1, 7) << 3; // BMS
 
-	//flags[2] |= CHECK_BIT(outputPortState, 2) << 0; // Blinkers
-	//flags[2] |= CHECK_BIT(outputPortState, 0) << 1; // Left Turn Signal
-	//flags[2] |= CHECK_BIT(outputPortState, 1) << 2; // Right Turn Signal
-	flags[2] ^= CHECK_BIT(risingEdges_flag1, 7) << 3; //?
-
+	// this flag enables cruise control which will be checked during throttle
+	// task to update the CC portion of this message
 	cc_enable ^= CHECK_BIT(risingEdges_flag2, 1);
 
+	// stored static variable is updated with current input
 	prev_input1 = *Input1;
 	prev_input2 = *Input2;
 

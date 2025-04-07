@@ -26,6 +26,7 @@
 #include "TCAL9538RSVR.h"
 #include "defines.h"
 #include "User.hpp"
+#include "sg_can.h"
 //#include "sg_can.hpp"
 /* USER CODE END Includes */
 
@@ -55,10 +56,12 @@ DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan1;
 CAN_HandleTypeDef hcan2;
+CANController Controller;
 
 I2C_HandleTypeDef hi2c4;
 
 UART_HandleTypeDef huart4;
+
 
 /* Definitions for HeartBeat */
 osThreadId_t HeartBeatHandle;
@@ -183,7 +186,16 @@ int main(void)
   CPP_UserSetup();
 
 
-  HAL_CAN_Start(&hcan1);
+  CANDevice CAN_1(&hcan1);
+  CANDevice CAN_2(&hcan2);
+
+
+  Controller.AddDevice(&CAN_1);
+  Controller.AddDevice(&CAN_2);
+
+  Controller.AddFilterAll();
+
+  Controller.Start();
   HAL_UART_Init(&huart4);
 
 
