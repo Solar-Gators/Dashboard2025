@@ -18,10 +18,14 @@ void CPP_UserSetup(void) {
     // Make sure that timer priorities are configured correctly
     HAL_Delay(10);
 
+	dashboardState.reset(); // reset dashboard state
+
     dma_flag = 0;
     cc_enable = 0;
 
-	dashboardState.reset(); // reset dashboard state
+	HAL_CAN_Start(&hcan1); // start CAN1
+
+	// =========== GPIO INIT =============
 
     if (TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0xFF, 0x00) != HAL_OK) { Error_Handler(); } // inputs
     //if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b00111111, 0b11000000) != HAL_OK) { Error_Handler(); }
@@ -33,6 +37,8 @@ void CPP_UserSetup(void) {
 	// Set up UART4 for receiving data from the steering wheel
 	HAL_UART_Receive_IT(&huart4, &dashboardState.uart_rx, 1); // enable uart interrupt
 
+	// ========== SCREEN INIT =============
+	
     screen.Init();
     screen.SetRotation(3);
     screen.ClearScreen(RGB565_WHITE);
@@ -461,6 +467,26 @@ void CruiseControlManagement()
 	 *
 	 * */
 }
+
+void Init_CAN_Filter1(CAN_HandleTypeDef &hcan1)
+{
+  CAN_FilterTypeDef canfilterconfig;
+  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+  canfilterconfig.FilterBank = 18;
+  canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  canfilterconfig.FilterMode = CAN_FILTERMODE_IDLIST;
+  canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  canfilterconfig.SlaveStartFilterBank = 20;
+
+  // CAN ID"S TO ACCEPT GO HERE, 4 ACCEPTED IN LIST MODE
+  canfilterconfig.FilterIdHigh = 0x000 << 5;
+  canfilterconfig.FilterIdLow = 0x000 << 5;
+  canfilterconfig.FilterMaskIdHigh = 0x000 << 5;
+  canfilterconfig.FilterMaskIdLow = 0x000 << 5;
+
+  HAL_CAN_ConfigFilter(&hcan1, &canfilterconfig);
+}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if (huart->Instance == UART4)
@@ -474,8 +500,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	HAL_UART_Receive_IT(&huart4, &dashboardState.uart_rx, 1);
 }
 
-
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
 	dma_flag = 1;
 }
 

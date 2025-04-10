@@ -4,9 +4,7 @@
 #include <stddef.h>
 
 #include "main.h"
-
 #include "cmsis_os.h"
-
 #include "TCAL9538RSVR.h"
 #include "defines.h"
 #include "ILI9341.hpp"
@@ -28,12 +26,7 @@ extern "C" UART_HandleTypeDef huart4;
 
 void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2);
 void CruiseControlManagement();
-
-
-
-
-
-
+void Init_CAN_Filter1(CAN_HandleTypeDef& hcan);
 
 
 #endif /* USER_HPP_ */

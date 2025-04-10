@@ -161,9 +161,8 @@ int main(void)
   MX_CAN2_Init();
   MX_UART4_Init();
   /* USER CODE BEGIN 2 */
+  
   CPP_UserSetup();
-
-  HAL_CAN_Start(&hcan1);
 
   /* USER CODE END 2 */
 
@@ -447,6 +446,9 @@ static void MX_CAN1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN1_Init 2 */
+
+  // CAN FILTER SETUP
+  Init_CAN_Filter1(hcan1);
 
   /* USER CODE END CAN1_Init 2 */
 
