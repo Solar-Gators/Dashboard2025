@@ -51,7 +51,7 @@
 #define CAN_ID_VCU_SENSORS            0x002
 #define CAN_ID_POWERBOARD             0x003
 #define CAN_ID_BMS                    0x004
-#define CAN_ID_MITSUBA_MOTOR 0 
+#define CAN_ID_MITSUBA_MOTOR 0xFFF 
 // need mitsuba can message for velocity 
 
 // -------------------------

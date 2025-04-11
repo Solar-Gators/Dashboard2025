@@ -488,10 +488,10 @@ void Init_CAN_Filter1(CAN_HandleTypeDef &hcan1)
   canfilterconfig.SlaveStartFilterBank = 20;
 
   // CAN ID"S TO ACCEPT GO HERE, 4 ACCEPTED IN LIST MODE
-  canfilterconfig.FilterIdHigh = 0xFFF << 5;
-  canfilterconfig.FilterIdLow = 0xFFF << 5;
-  canfilterconfig.FilterMaskIdHigh = 0xFFF << 5;
-  canfilterconfig.FilterMaskIdLow = 0xFFF << 5;
+  canfilterconfig.FilterIdHigh = CAN_ID_VCU_SENSORS << 5;
+  canfilterconfig.FilterIdLow = CAN_ID_POWERBOARD << 5;
+  canfilterconfig.FilterMaskIdHigh = CAN_ID_BMS << 5;
+  canfilterconfig.FilterMaskIdLow = CAN_ID_MITSUBA_MOTOR << 5;
 
   HAL_CAN_ConfigFilter(&hcan1, &canfilterconfig);
 }
