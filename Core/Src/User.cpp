@@ -23,9 +23,16 @@ void CPP_UserSetup(void) {
     dma_flag = 0;
     cc_enable = 0;
 
+	// -------------------------
+	// CAN INIT
+	// -------------------------
+	Init_CAN_Filter1(hcan1); // set up CAN filter for CAN1
 	HAL_CAN_Start(&hcan1); // start CAN1
+	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING); // enable CAN1 RX interrupt
 
-	// =========== GPIO INIT =============
+	// -------------------------
+	// GPIO EXPANDERS INIT
+	// -------------------------
 
     if (TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0xFF, 0x00) != HAL_OK) { Error_Handler(); } // inputs
     //if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b00111111, 0b11000000) != HAL_OK) { Error_Handler(); }
@@ -37,7 +44,9 @@ void CPP_UserSetup(void) {
 	// Set up UART4 for receiving data from the steering wheel
 	HAL_UART_Receive_IT(&huart4, &dashboardState.uart_rx, 1); // enable uart interrupt
 
-	// ========== SCREEN INIT =============
+	// -------------------------
+	// SCREEN INIT 
+	// -------------------------
 	
     screen.Init();
     screen.SetRotation(3);
@@ -479,10 +488,10 @@ void Init_CAN_Filter1(CAN_HandleTypeDef &hcan1)
   canfilterconfig.SlaveStartFilterBank = 20;
 
   // CAN ID"S TO ACCEPT GO HERE, 4 ACCEPTED IN LIST MODE
-  canfilterconfig.FilterIdHigh = 0x000 << 5;
-  canfilterconfig.FilterIdLow = 0x000 << 5;
-  canfilterconfig.FilterMaskIdHigh = 0x000 << 5;
-  canfilterconfig.FilterMaskIdLow = 0x000 << 5;
+  canfilterconfig.FilterIdHigh = 0xFFF << 5;
+  canfilterconfig.FilterIdLow = 0xFFF << 5;
+  canfilterconfig.FilterMaskIdHigh = 0xFFF << 5;
+  canfilterconfig.FilterMaskIdLow = 0xFFF << 5;
 
   HAL_CAN_ConfigFilter(&hcan1, &canfilterconfig);
 }
@@ -509,4 +518,34 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	GPIO_Interrupt_Triggered = 1;
 }
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    CAN_RxHeaderTypeDef RxHeader;
+    uint8_t RxData[8];
+
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    if (RxHeader.StdId == VCU_SENSORS_CAN_MESSAGE_ID)
+    {
+        // Process message from VCU
+
+    }
+    else if (RxHeader.StdId == BMS_BATTERY_INFO_CAN_MESSAGE_ID)
+	{
+		// Process message from BMS
+	}
+	else if (RxHeader.StdId == POWER_BOARD_CAN_MESSAGE_ID)
+    {
+        // Process message from BMS
+    }
+	else if (RxHeader.StdId == MITSUBA_MOTOR_CAN_MESSAGE_ID)
+	{
+		// Process message from Mitsuba motor
+	}
+}
+
 

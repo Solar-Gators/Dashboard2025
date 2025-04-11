@@ -447,9 +447,6 @@ static void MX_CAN1_Init(void)
   }
   /* USER CODE BEGIN CAN1_Init 2 */
 
-  // CAN FILTER SETUP
-  Init_CAN_Filter1(hcan1);
-
   /* USER CODE END CAN1_Init 2 */
 
 }
