@@ -24,17 +24,41 @@ void DashboardState::reset() {
     updateRequested = 0;
 }
 
+// gets called only when something changes in the dashboard state
 void DashboardState::updateFromUART() {
+
     // uart data for lights (blinkers)
-    if (uart_rx & BUTTON_HAZARD)
+    if (uart_rx & BUTTON_HAZARD) {
         lightState = LIGHTS_HAZARD;
-    else if (uart_rx & BUTTON_LEFT_TURN)
+    }
+    else if (uart_rx & BUTTON_LEFT_TURN) {
         lightState = LIGHTS_LEFT;
-    else if (uart_rx & BUTTON_RIGHT_TURN)
+    }
+    else if (uart_rx & BUTTON_RIGHT_TURN) {
         lightState = LIGHTS_RIGHT;
+    }
     else {
         lightState = LIGHTS_NONE;
-        outputPortState &= ~(OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
+    }
+
+    // if the light state has changed, reset the blink time and update the output port state
+    if (oldLightState != lightState) {
+        lastBlinkTime = HAL_GetTick(); // reset blink time if light state changes
+        oldLightState = lightState;
+        if (lightState == LIGHTS_HAZARD) {
+            outputPortState |= (OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
+        }
+        else if (lightState == LIGHTS_LEFT) {
+            outputPortState |= OUTPUT_FL_LIGHT_CTRL;
+            outputPortState &= ~OUTPUT_FR_LIGHT_CTRL;
+        }
+        else if (lightState == LIGHTS_RIGHT) {
+            outputPortState |= OUTPUT_FR_LIGHT_CTRL;
+            outputPortState &= ~OUTPUT_FL_LIGHT_CTRL;
+        }
+        else {
+            outputPortState &= ~(OUTPUT_FL_LIGHT_CTRL | OUTPUT_FR_LIGHT_CTRL);
+        }
     }
 
     // if headlight should be on  

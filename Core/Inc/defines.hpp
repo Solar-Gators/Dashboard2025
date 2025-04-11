@@ -1,6 +1,9 @@
 #pragma once
 #include <stdbool.h>
 
+// blinkling light (hazards and turn signals) blink interval
+#define BLINK_INTERVAL_MS 500 // milliseconds
+
 // Button bitmask definitions (UART input from steering wheel)
 #define BUTTON_LEFT_TURN     (1 << 3) // left side going down
 #define BUTTON_HAZARD        (1 << 2)

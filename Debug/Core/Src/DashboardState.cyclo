@@ -1,4 +1,4 @@
 ../Core/Src/DashboardState.cpp:3:6:void DashboardState::reset()	1
-../Core/Src/DashboardState.cpp:27:6:void DashboardState::updateFromUART()	9
-../Core/Src/DashboardState.cpp:88:19:HAL_StatusTypeDef DashboardState::writeToPort(TCAL9538RSVR&)	1
-../Core/Src/DashboardState.cpp:93:6:void DashboardState::blinkLights()	5
+../Core/Src/DashboardState.cpp:28:6:void DashboardState::updateFromUART()	13
+../Core/Src/DashboardState.cpp:112:19:HAL_StatusTypeDef DashboardState::writeToPort(TCAL9538RSVR&)	1
+../Core/Src/DashboardState.cpp:117:6:void DashboardState::blinkLights()	5

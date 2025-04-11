@@ -16,6 +16,7 @@ typedef enum {
 struct DashboardState {
     // lights
     LightState lightState = LIGHTS_NONE;
+    LightState oldLightStateScreen = LIGHTS_NONE;
     LightState oldLightState = LIGHTS_NONE;
 
     // outputs
@@ -25,6 +26,9 @@ struct DashboardState {
     uint8_t headlightState = 0;
     uint8_t pttState = 0;
     uint8_t displayState = 0;
+
+    // blink time
+    uint32_t lastBlinkTime = 0; // time of last blink
 
     // only have these as debugging for the screen, only wanna write to screen when they are updated/changed
     uint8_t oldHornState = 0;

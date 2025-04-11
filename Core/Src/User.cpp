@@ -244,8 +244,7 @@ void StartTask04(void *argument)
 {
   /* USER CODE BEGIN StartTask04 */
 
-  uint32_t lastBlinkTime = HAL_GetTick();
-  const uint32_t blinkInterval = 500;
+  dashboardState.lastBlinkTime = HAL_GetTick(); // initialize last blink time
 
   /* Infinite loop */
   for(;;)
@@ -253,9 +252,9 @@ void StartTask04(void *argument)
 
     uint32_t currentTick = HAL_GetTick();
 
-    if (currentTick - lastBlinkTime > blinkInterval)
+    if (currentTick - dashboardState.lastBlinkTime > BLINK_INTERVAL_MS)
     {
-      	lastBlinkTime = currentTick;
+      	dashboardState.lastBlinkTime = currentTick;
 		// enter critical section because we do read-modify-write operations in that function
 		DASHBOARD_CRITICAL(
 			dashboardState.blinkLights()
@@ -293,7 +292,7 @@ void StartTask05(void *argument)
   for(;;)
   {
 	DASHBOARD_CRITICAL( // critical region for all of these read-read operations that are not atomic
-		lightStateChanged = dashboardState.oldLightState != dashboardState.lightState;
+		lightStateChanged = dashboardState.oldLightStateScreen != dashboardState.lightState;
 		bmsStatusChanged = dashboardState.old_bmsStatus != dashboardState.bmsStatus;
 		mcStatusChanged = dashboardState.old_mcStatus != dashboardState.mcStatus;
 		arrayStatusChanged = dashboardState.old_arrayStatus != dashboardState.arrayStatus;
@@ -301,7 +300,7 @@ void StartTask05(void *argument)
 		fanStateChanged = dashboardState.oldFanState != dashboardState.fanState;
 		headlightStateChanged = dashboardState.oldHeadlightState != dashboardState.headlightState;
 
-		dashboardState.oldLightState = dashboardState.lightState;
+		dashboardState.oldLightStateScreen = dashboardState.lightState;
 		dashboardState.old_bmsStatus = dashboardState.bmsStatus;
 		dashboardState.old_mcStatus = dashboardState.mcStatus;
 		dashboardState.old_arrayStatus = dashboardState.arrayStatus;
