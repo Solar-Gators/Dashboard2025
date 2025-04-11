@@ -1,6 +1,4 @@
-#ifndef DASHBOARD_DEFINES_H
-#define DASHBOARD_DEFINES_H
-
+#pragma once
 #include <stdbool.h>
 
 // Button bitmask definitions (UART input from steering wheel)
@@ -47,15 +45,13 @@
         taskEXIT_CRITICAL();           \
     } while (0)
 
-#endif // DASHBOARD_DEFINES_H
-
 // CAN Message IDs
 #define CAN_ID_ANALOG_INPUTS          0x000 // throttle and cc
 #define CAN_ID_CRITICAL_SWITCHES      0x001  
 #define CAN_ID_VCU_SENSORS            0x002
 #define CAN_ID_POWERBOARD             0x003
 #define CAN_ID_BMS                    0x004
-#define MITSUBA_MOTOR_CAN_MESSAGE_ID 0 
+#define CAN_ID_MITSUBA_MOTOR 0 
 // need mitsuba can message for velocity 
 
 // -------------------------
@@ -64,7 +60,7 @@
 #define CRITICAL_SWITCHES_BYTE_1_INDEX 1
 #define CRITICAL_SWITCHES_BYTE_2_INDEX 2
 
-enum CriticalSwitches1Bits {
+enum class CRITICAL_SWITCHES_1_BITS {
     SWITCH_IGNITION_BIT        = 0,
     SWITCH_BRAKE_BIT           = 1,
     SWITCH_DIRECTION_BIT       = 2,
@@ -75,7 +71,7 @@ enum CriticalSwitches1Bits {
     SWITCH_PTT_BIT             = 7,
 };
 
-enum CriticalSwitches2Bits {
+enum class CRITICAL_SWITCHES_2_BITS {
     SWITCH_BLINKERS_BIT        = 0,
     SWITCH_LEFT_TURN_BIT       = 1,
     SWITCH_RIGHT_TURN_BIT      = 2,
@@ -87,7 +83,7 @@ enum CriticalSwitches2Bits {
 // -------------------------
 #define VCU_SENSORS_STATUS_BYTE_INDEX 7
 
-enum VCU_SensorsStatusBits {
+enum class VCU_SENSORS_STATUS_BITS {
     VCU_MC_ENABLED_BIT        = 0,
     VCU_ARRAY_ENABLED_BIT     = 1,
 };
@@ -109,7 +105,7 @@ enum VCU_SensorsStatusBits {
 #define BMS_MAIN_BATTERY_CURRENT_MSB_INDEX 6
 #define BMS_STATUS_BYTE_INDEX 7
 
-enum BMSStatusBits {
+enum class BMS_STATUS_BITS {
     BMS_CONTACTORS_CLOSED_BIT   = 0,
 };
 

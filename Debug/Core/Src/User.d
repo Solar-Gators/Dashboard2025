@@ -46,7 +46,7 @@ Core/Src/User.o: ../Core/Src/User.cpp ../Core/Inc/User.hpp \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
  C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h \
- ../Core/Inc/defines.h \
+ ../Core/Inc/defines.hpp \
  C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp \
  ../Core/Inc/main.h ../Core/Inc/DashboardState.hpp
 ../Core/Inc/User.hpp:
@@ -98,7 +98,7 @@ Core/Src/User.o: ../Core/Src/User.cpp ../Core/Inc/User.hpp \
 ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h:
 C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h:
-../Core/Inc/defines.h:
+../Core/Inc/defines.hpp:
 C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp:
 ../Core/Inc/main.h:
 ../Core/Inc/DashboardState.hpp:

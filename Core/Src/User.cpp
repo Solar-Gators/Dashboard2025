@@ -272,7 +272,7 @@ void StartTask04(void *argument)
 
 	if (dashboardState.writeToPort(U7) != HAL_OK) { Error_Handler(); } // write to output port
 
-    osDelay(100);
+    osDelay(50);
   }
   /* USER CODE END StartTask04 */
 }
@@ -529,22 +529,51 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         Error_Handler();
     }
 
-    if (RxHeader.StdId == VCU_SENSORS_CAN_MESSAGE_ID)
+	// vcu sends mc and array status
+    if (RxHeader.StdId == CAN_ID_VCU_SENSORS)
     {
-        // Process message from VCU
+		uint8_t statusByte = RxData[VCU_SENSORS_STATUS_BYTE_INDEX];
 
+		dashboardState.mcStatus = CHECK_BIT(
+			statusByte, 
+			(int)VCU_SENSORS_STATUS_BITS::VCU_MC_ENABLED_BIT
+		);
+		dashboardState.arrayStatus = CHECK_BIT(
+			statusByte,
+			(int)VCU_SENSORS_STATUS_BITS::VCU_ARRAY_ENABLED_BIT
+		);
     }
-    else if (RxHeader.StdId == BMS_BATTERY_INFO_CAN_MESSAGE_ID)
+	// powerboard sends voltage of supplemental battery 
+	else if (RxHeader.StdId == CAN_ID_POWERBOARD)
 	{
-		// Process message from BMS
+		dashboardState.supp_batt_voltage_lsb = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX];
+		dashboardState.supp_batt_voltage_msb = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_MSB_INDEX];
 	}
-	else if (RxHeader.StdId == POWER_BOARD_CAN_MESSAGE_ID)
-    {
-        // Process message from BMS
-    }
-	else if (RxHeader.StdId == MITSUBA_MOTOR_CAN_MESSAGE_ID)
+	// bms sends contactors closed indicator and battery voltage and current
+	else if (RxHeader.StdId == CAN_ID_BMS)
 	{
-		// Process message from Mitsuba motor
+		uint8_t statusByte = RxData[BMS_STATUS_BYTE_INDEX];
+
+		dashboardState.bmsStatus = CHECK_BIT(
+			statusByte,
+			(int)BMS_STATUS_BITS::BMS_CONTACTORS_CLOSED_BIT
+		);
+
+		// need to calculate power from voltage and current 
+		// but first need to figure out format for how this bytes are sent
+		/*
+		// power = voltage * current
+		float voltage = (float)((RxData[BMS_MAIN_BATTERY_VOLTAGE_MSB_INDEX] << 24) | 
+			RxData[BMS_MAIN_BATTERY_VOLTAGE_BYTE_2_INDEX] << 16 |
+			RxData[BMS_MAIN_BATTERY_VOLTAGE_BYTE_1_INDEX] << 8 | 
+			RxData[BMS_MAIN_BATTERY_VOLTAGE_LSB_INDEX]
+		);
+		*/
+	}
+	// mitsuba motor sends velocity and other data?
+	else if (RxHeader.StdId == CAN_ID_MITSUBA_MOTOR)
+	{
+		// Process message from Mitsuba Motor
 	}
 }
 

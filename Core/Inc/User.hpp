@@ -6,7 +6,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "TCAL9538RSVR.h"
-#include "defines.h"
+#include "defines.hpp"
 #include "ILI9341.hpp"
 
 #define ADC_BUF_LEN 10 // ADC DMA Buffer size

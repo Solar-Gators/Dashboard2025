@@ -1,6 +1,5 @@
 #pragma once
-
-#include "defines.h"
+#include "defines.hpp"
 #include "TCAL9538RSVR.h"
 #include "ILI9341.hpp"
 #include <stdint.h>
@@ -47,11 +46,21 @@ struct DashboardState {
     uint8_t updateRequested = 0; // flag to indicate that the dashboard state needs to be updated
                                  // when uart recieves a new message
 
+    // can stuff that shows up on screen
+    uint8_t supp_batt_voltage_lsb = 0; // supplemental battery voltage LSB
+    uint8_t supp_batt_voltage_msb = 0; // supplemental battery voltage MSB
+    uint8_t main_batt_power_lsb = 0; // main battery power LSB
+    uint8_t main_batt_power_msb = 0; // main battery power MSB
+
+    /*
+    float supp_batt_voltage = 0.0f; // supplemental battery voltage
+    float main_batt_power = 0.0f; // main battery power
+    float velocity = 0.0f; // velocity of the car
+    */
+
+    // functions
     void reset();
-
-    void updateFromUART(); 
-
-    HAL_StatusTypeDef writeToPort(TCAL9538RSVR &U7);
-
-    void blinkLights();
+    void updateFromUART();  // update dashboard state from UART input
+    HAL_StatusTypeDef writeToPort(TCAL9538RSVR &U7); // write current state of dashboard to output port
+    void blinkLights(); // toggle state of blinking lights (hazards and turn signals) 
 };

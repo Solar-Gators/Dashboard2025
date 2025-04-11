@@ -1,5 +1,5 @@
 Core/Src/DashboardState.o: ../Core/Src/DashboardState.cpp \
- ../Core/Inc/DashboardState.hpp ../Core/Inc/defines.h \
+ ../Core/Inc/DashboardState.hpp ../Core/Inc/defines.hpp \
  C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
  ../Core/Inc/stm32l4xx_hal_conf.h \
@@ -38,7 +38,7 @@ Core/Src/DashboardState.o: ../Core/Src/DashboardState.cpp \
  C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp \
  ../Core/Inc/main.h ../Core/Inc/Drivers/TCAL9538RSVR.h
 ../Core/Inc/DashboardState.hpp:
-../Core/Inc/defines.h:
+../Core/Inc/defines.hpp:
 C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
