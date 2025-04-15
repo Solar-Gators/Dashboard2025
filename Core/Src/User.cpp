@@ -212,9 +212,10 @@ void StartTask03(void *argument)
 	  if (GPIO_Interrupt_Triggered)
 	  {
 		  if (debounce_count++ <= 2) {continue;}
-		  if (TCAL9538RSVR_HandleInterrupt(&U5) != HAL_OK){ Error_Handler(); }
-		  //if (TCAL9538RSVR_HandleInterrupt(&U16) != HAL_OK){ Error_Handler(); }
-
+		  DASHBOARD_CRITICAL(
+		  	if (TCAL9538RSVR_HandleInterrupt(&U5) != HAL_OK) { Error_Handler(); }
+		  	//if (TCAL9538RSVR_HandleInterrupt(&U16) != HAL_OK){ Error_Handler(); }
+		  );
 
 		  Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
 		  GPIO_Interrupt_Triggered = 0;
@@ -269,7 +270,9 @@ void StartTask04(void *argument)
 		dashboardState.updateRequested = 0; // reset update requested flag
 	}
 
-	if (dashboardState.writeToPort(U7) != HAL_OK) { Error_Handler(); } // write to output port
+	DASHBOARD_CRITICAL(
+		if (dashboardState.writeToPort(U7) != HAL_OK) { Error_Handler(); } // write to output port
+	);
 
     osDelay(50);
   }
