@@ -69,6 +69,7 @@ void CPP_UserSetup(void) {
     screen.FillCircle(150, 210, 10, RGB565_RED);
     screen.FillCircle(235, 210, 10, RGB565_RED);
 
+	/*
 	// temp to help debug  
 	const char* str3 = "HedLit Horn  Fan\0";
     screen.SetTextSize(2);
@@ -77,6 +78,7 @@ void CPP_UserSetup(void) {
     screen.FillCircle(70, 120, 10, RGB565_RED);   // Headlights
     screen.FillCircle(150, 120, 10, RGB565_RED);  // Horn
     screen.FillCircle(235, 120, 10, RGB565_RED);  // Fan
+	*/
 }
 
 
@@ -378,6 +380,7 @@ void StartTask05(void *argument)
 		screen.FillCircle(235, 210, 10, color);
 	}
 
+	/*
 	// temp debug stuff
 	if (hornStateChanged) {
 		if (dashboardState.hornState) color = RGB565_GREEN;
@@ -394,12 +397,36 @@ void StartTask05(void *argument)
 		else color = RGB565_RED;
 		screen.FillCircle(70, 120, 10, color);
 	}
+	*/
 
 	// always display velocity, and power
-	uint16_t motor_rpm = (dashboardState.motor_rpm_msb << 8) | dashboardState.motor_rpm_lsb;
-	uint16_t motor_voltage = (dashboardState.motor_voltage_msb << 8) | dashboardState.motor_voltage_lsb;
-	uint16_t motor_current = (dashboardState.motor_current_msb << 8) | dashboardState.motor_current_lsb;
-	uint8_t motor_current_direction = dashboardState.motor_current_direction;
+	float supp_batt_voltage;
+	float motor_power;
+	float car_velocity;
+
+	DASHBOARD_CRITICAL(
+		supp_batt_voltage = dashboardState.getSuppBattVoltage();
+		motor_power = dashboardState.getMotorPower();
+		car_velocity = dashboardState.getCarVelocity();
+	);
+
+	char textBuffer[32];
+	screen.SetTextSize(2);
+
+	// Clear old text area
+	screen.FillRect(30, 130, 260, 80, RGB565_WHITE); // adjust area as needed
+
+	// Draw Supplemental Battery Voltage
+	snprintf(textBuffer, sizeof(textBuffer), "Supp Volt: %.1f V", supp_batt_voltage);
+	screen.DrawText(30, 130, textBuffer, RGB565_BLACK);
+
+	// Draw Motor Power
+	snprintf(textBuffer, sizeof(textBuffer), "Motor Pwr: %.0f W", motor_power);
+	screen.DrawText(30, 160, textBuffer, RGB565_BLACK);
+
+	// Draw Car Velocity
+	snprintf(textBuffer, sizeof(textBuffer), "Velocity: %.1f m/s", car_velocity);
+	screen.DrawText(30, 190, textBuffer, RGB565_BLACK);	
 
     osDelay(100);
   }

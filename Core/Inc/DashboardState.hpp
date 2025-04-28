@@ -77,4 +77,7 @@ struct DashboardState {
     void updateFromUART();  // update dashboard state from UART input
     HAL_StatusTypeDef writeToPort(TCAL9538RSVR &U7); // write current state of dashboard to output port
     void blinkLights(); // toggle state of blinking lights (hazards and turn signals) 
+    float getSuppBattVoltage(); // get supplemental battery voltage in volts
+    float getMotorPower(); // get motor power in watts
+    float getCarVelocity(); // get car velocity in m/s
 };

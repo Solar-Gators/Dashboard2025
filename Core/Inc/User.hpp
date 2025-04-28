@@ -2,6 +2,7 @@
 #define USER_HPP_
 
 #include <stddef.h>
+#include <cstdio>
 
 #include "main.h"
 #include "cmsis_os.h"

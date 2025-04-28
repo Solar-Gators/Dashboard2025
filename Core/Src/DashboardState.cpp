@@ -130,3 +130,15 @@ void DashboardState::blinkLights() {
             break;
     }
 }
+
+float DashboardState::getSuppBattVoltage() {
+    return 0;
+}
+
+float DashboardState::getMotorPower() {
+    return 0;
+}
+
+float DashboardState::getCarVelocity() {
+    return 0;
+}
