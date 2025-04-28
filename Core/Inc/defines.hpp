@@ -3,6 +3,7 @@
 
 // blinkling light (hazards and turn signals) blink interval
 #define BLINK_INTERVAL_MS 500 // milliseconds
+#define WHEEL_CIRCUMFERENCE_IN 69.12 // inches
 
 // Button bitmask definitions (UART input from steering wheel)
 #define BUTTON_LEFT_TURN     (1 << 3) // left side going down
@@ -53,33 +54,13 @@
 #define CAN_ID_CRITICAL_SWITCHES      0x001  
 #define CAN_ID_VCU_SENSORS            0x002
 #define CAN_ID_POWERBOARD             0x003
-#define CAN_ID_BMS                    0x004
-#define CAN_ID_MITSUBA_MOTOR 0xFFF 
+#define CAN_ID_BMS_FULL_BATT_INFO 0x004
+#define CAN_ID_BMS_POWER_CONSUM_INFO 0x006
+#define CAN_ID_MITSUBA_MOTOR_FRAME_0          0x08850225
 // need mitsuba can message for velocity 
 
-// -------------------------
-// CRITICAL SWITCHES (CAN ID: CAN_ID_CRITICAL_SWITCHES)
-// -------------------------
-#define CRITICAL_SWITCHES_BYTE_1_INDEX 1
-#define CRITICAL_SWITCHES_BYTE_2_INDEX 2
-
-enum class CRITICAL_SWITCHES_1_BITS {
-    SWITCH_IGNITION_BIT        = 0,
-    SWITCH_BRAKE_BIT           = 1,
-    SWITCH_DIRECTION_BIT       = 2,
-    SWITCH_MC_ENABLE_BIT       = 3,
-    SWITCH_ARRAY_BIT           = 4,
-    SWITCH_ARRAY_PRECHARGE_BIT = 5,
-    SWITCH_HORN_BIT            = 6,
-    SWITCH_PTT_BIT             = 7,
-};
-
-enum class CRITICAL_SWITCHES_2_BITS {
-    SWITCH_BLINKERS_BIT        = 0,
-    SWITCH_LEFT_TURN_BIT       = 1,
-    SWITCH_RIGHT_TURN_BIT      = 2,
-    SWITCH_HEADLIGHTS_BIT      = 3,
-};
+// CAN id for requestion frame0 from mitsuba motor
+#define CAN_ID_MITSUBA_MOTOR_REQUEST 0x08F89540
 
 // -------------------------
 // VCU SENSORS (CAN ID: CAN_ID_VCU_SENSORS)
@@ -87,8 +68,8 @@ enum class CRITICAL_SWITCHES_2_BITS {
 #define VCU_SENSORS_STATUS_BYTE_INDEX 7
 
 enum class VCU_SENSORS_STATUS_BITS {
-    VCU_MC_ENABLED_BIT        = 0,
-    VCU_ARRAY_ENABLED_BIT     = 1,
+    VCU_MC_ENABLED_BIT_POS        = 0,
+    VCU_ARRAY_ENABLED_BIT_POS     = 1,
 };
 
 // -------------------------
@@ -98,18 +79,41 @@ enum class VCU_SENSORS_STATUS_BITS {
 #define POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_MSB_INDEX 3
 
 // -------------------------
-// BMS STATUS (CAN ID: CAN_ID_BMS)
+// BMS STATUS FULL BATT INFO (CAN ID: CAN_ID_BMS_FULL_BATT_INFOR)
 // -------------------------
-#define BMS_MAIN_BATTERY_VOLTAGE_LSB_INDEX 1
-#define BMS_MAIN_BATTERY_VOLTAGE_BYTE_1_INDEX 2
-#define BMS_MAIN_BATTERY_VOLTAGE_BYTE_2_INDEX 3
-#define BMS_MAIN_BATTERY_VOLTAGE_MSB_INDEX 4
-#define BMS_MAIN_BATTERY_CURRENT_LSB_INDEX 5
-#define BMS_MAIN_BATTERY_CURRENT_MSB_INDEX 6
+#define BMS_MAIN_BATTERY_VOLTAGE_LSB_INDEX 0
+#define BMS_MAIN_BATTERY_VOLTAGE_BYTE_1_INDEX 1
+#define BMS_MAIN_BATTERY_VOLTAGE_BYTE_2_INDEX 2
+#define BMS_MAIN_BATTERY_VOLTAGE_MSB_INDEX 3
+
+#define BMS_MAIN_BATTERY_CURRENT_LSB_INDEX 4
+#define BMS_MAIN_BATTERY_CURRENT_BYTE_1_INDEX 5
+#define BMS_MAIN_BATTERY_CURRENT_BYTE_2_INDEX 6
+#define BMS_MAIN_BATTERY_CURRENT_MSB_INDEX 7
+
+// -------------------------
+// BMS STATUS POWER CONSUMPTION INFO (CAN ID: CAN_ID_BMS_POWER_CONSUM_INFO)
+// -------------------------
 #define BMS_STATUS_BYTE_INDEX 7
 
 enum class BMS_STATUS_BITS {
-    BMS_CONTACTORS_CLOSED_BIT   = 0,
+    BMS_CONTACTORS_CLOSED_BIT_POS   = 0,
 };
 
+// --------------------------
+// MITSUBA MOTOR (CAN ID: CAN_ID_MITSUBA_MOTOR)
+// --------------------------
+// bit 46 downto bit 35 is motor rotating speed
+// bit 9 downto 0 is voltage
+// bit 18 downto 10 is current
+// bit 19 is battery current direction
+#define MITSUBA_RPM_VELOCITY_LSB_BIT_INDEX 35 // 1rpm/lsb
+#define MITSUBA_RPM_VELOCITY_LEN 12
 
+#define MITSUBA_VOLTAGE_LSB_BIT_INDEX 0 // 0.5V/lsb
+#define MITSUBA_VOLTAGE_LEN 10
+
+#define MITSUBA_CURRENT_LSB_BIT_INDEX 10 // 1A/lsb
+#define MITSUBA_CURRENT_LEN 9
+
+#define MITSUBA_BATTERY_CURRENT_DIRECTION_BIT_INDEX 19 // 0 = plus current (discharge), 1 = minus current (charge)

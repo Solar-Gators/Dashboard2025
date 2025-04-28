@@ -84,10 +84,28 @@ void StartTask01(void *argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
+  CAN_TxHeaderTypeDef TxHeader;
+	uint8_t TxData[8] = { 0 };
+	uint32_t TxMailbox = { 0 };
+
+	TxHeader.IDE = CAN_ID_EXT;
+	TxHeader.ExtId = CAN_ID_MITSUBA_MOTOR_REQUEST;
+	TxHeader.RTR = CAN_RTR_DATA;
+	TxHeader.DLC = 1;
+	TxData[0] = 1; // bit 0 = request for frame 0
+
   for(;;)
   {
-	  //HAL_UART_Receive(&huart4, UART4_rxBuffer, 1, HAL_MAX_DELAY);
-	  HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
+	HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
+	// also send can message to request frame 0 from mitsuba motor
+
+	HAL_StatusTypeDef status;
+	status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+	if (status == HAL_ERROR)
+	{
+		Error_Handler();
+	}
+
     osDelay(500);
   }
   /* USER CODE END 5 */
@@ -377,6 +395,12 @@ void StartTask05(void *argument)
 		screen.FillCircle(70, 120, 10, color);
 	}
 
+	// always display velocity, and power
+	uint16_t motor_rpm = (dashboardState.motor_rpm_msb << 8) | dashboardState.motor_rpm_lsb;
+	uint16_t motor_voltage = (dashboardState.motor_voltage_msb << 8) | dashboardState.motor_voltage_lsb;
+	uint16_t motor_current = (dashboardState.motor_current_msb << 8) | dashboardState.motor_current_lsb;
+	uint8_t motor_current_direction = dashboardState.motor_current_direction;
+
     osDelay(100);
   }
   /* USER CODE END StartTask05 */
@@ -492,8 +516,8 @@ void Init_CAN_Filter1(CAN_HandleTypeDef &hcan1)
   // CAN ID"S TO ACCEPT GO HERE, 4 ACCEPTED IN LIST MODE
   canfilterconfig.FilterIdHigh = CAN_ID_VCU_SENSORS << 5;
   canfilterconfig.FilterIdLow = CAN_ID_POWERBOARD << 5;
-  canfilterconfig.FilterMaskIdHigh = CAN_ID_BMS << 5;
-  canfilterconfig.FilterMaskIdLow = CAN_ID_MITSUBA_MOTOR << 5;
+  canfilterconfig.FilterMaskIdHigh = CAN_ID_BMS_POWER_CONSUM_INFO << 5;
+  canfilterconfig.FilterMaskIdLow = (uint32_t)CAN_ID_MITSUBA_MOTOR_FRAME_0 << 5;
 
   HAL_CAN_ConfigFilter(&hcan1, &canfilterconfig);
 }
@@ -538,11 +562,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
 		dashboardState.mcStatus = CHECK_BIT(
 			statusByte, 
-			(int)VCU_SENSORS_STATUS_BITS::VCU_MC_ENABLED_BIT
+			(int)VCU_SENSORS_STATUS_BITS::VCU_MC_ENABLED_BIT_POS
 		);
 		dashboardState.arrayStatus = CHECK_BIT(
 			statusByte,
-			(int)VCU_SENSORS_STATUS_BITS::VCU_ARRAY_ENABLED_BIT
+			(int)VCU_SENSORS_STATUS_BITS::VCU_ARRAY_ENABLED_BIT_POS
 		);
     }
 	// powerboard sends voltage of supplemental battery 
@@ -552,30 +576,34 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		dashboardState.supp_batt_voltage_msb = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_MSB_INDEX];
 	}
 	// bms sends contactors closed indicator and battery voltage and current
-	else if (RxHeader.StdId == CAN_ID_BMS)
+	else if (RxHeader.StdId == CAN_ID_BMS_POWER_CONSUM_INFO)
 	{
 		uint8_t statusByte = RxData[BMS_STATUS_BYTE_INDEX];
 
 		dashboardState.bmsStatus = CHECK_BIT(
 			statusByte,
-			(int)BMS_STATUS_BITS::BMS_CONTACTORS_CLOSED_BIT
+			(int)BMS_STATUS_BITS::BMS_CONTACTORS_CLOSED_BIT_POS
 		);
-
-		// need to calculate power from voltage and current 
-		// but first need to figure out format for how this bytes are sent
-		/*
-		// power = voltage * current
-		float voltage = (float)((RxData[BMS_MAIN_BATTERY_VOLTAGE_MSB_INDEX] << 24) | 
-			RxData[BMS_MAIN_BATTERY_VOLTAGE_BYTE_2_INDEX] << 16 |
-			RxData[BMS_MAIN_BATTERY_VOLTAGE_BYTE_1_INDEX] << 8 | 
-			RxData[BMS_MAIN_BATTERY_VOLTAGE_LSB_INDEX]
-		);
-		*/
 	}
 	// mitsuba motor sends velocity and other data?
-	else if (RxHeader.StdId == CAN_ID_MITSUBA_MOTOR)
+	else if (RxHeader.StdId == CAN_ID_MITSUBA_MOTOR_FRAME_0)
 	{
-		// Process message from Mitsuba Motor
+		uint64_t full_data = 0;
+		for (int i = 0; i < 8; i++)
+		{
+			full_data |= (uint64_t)RxData[i] << (i * 8);
+		}
+		uint16_t motor_rpm = (full_data >> MITSUBA_RPM_VELOCITY_LSB_BIT_INDEX) & ((1 << MITSUBA_RPM_VELOCITY_LEN) - 1);
+		uint16_t motor_voltage = (full_data >> MITSUBA_VOLTAGE_LSB_BIT_INDEX) & ((1 << MITSUBA_VOLTAGE_LEN) - 1);
+		uint16_t motor_current = (full_data >> MITSUBA_CURRENT_LSB_BIT_INDEX) & ((1 << MITSUBA_CURRENT_LEN) - 1);
+		uint8_t motor_current_direction = (full_data >> MITSUBA_BATTERY_CURRENT_DIRECTION_BIT_INDEX) & 0x01;
+		dashboardState.motor_rpm_lsb = motor_rpm & 0xFF;
+		dashboardState.motor_rpm_msb = (motor_rpm >> 8) & 0xFF;
+		dashboardState.motor_voltage_lsb = motor_voltage & 0xFF;
+		dashboardState.motor_voltage_msb = (motor_voltage >> 8) & 0xFF;
+		dashboardState.motor_current_lsb = motor_current & 0xFF;
+		dashboardState.motor_current_msb = (motor_current >> 8) & 0xFF;
+		dashboardState.motor_current_direction = motor_current_direction;
 	}
 }
 

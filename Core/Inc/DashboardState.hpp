@@ -51,10 +51,20 @@ struct DashboardState {
                                  // when uart recieves a new message
 
     // can stuff that shows up on screen
-    uint8_t supp_batt_voltage_lsb = 0; // supplemental battery voltage LSB
-    uint8_t supp_batt_voltage_msb = 0; // supplemental battery voltage MSB
-    uint8_t main_batt_power_lsb = 0; // main battery power LSB
-    uint8_t main_batt_power_msb = 0; // main battery power MSB
+
+    uint8_t supp_batt_voltage_lsb = 0; // supplemental battery voltage LSB (mV)
+    uint8_t supp_batt_voltage_msb = 0; // supplemental battery voltage MSB (mV)
+
+    uint8_t motor_rpm_lsb = 0; // motor RPM LSB (1rpm)
+    uint8_t motor_rpm_msb = 0; // motor RPM MSB (1rpm)
+
+    uint8_t motor_current_lsb = 0; // motor current LSB (1A)
+    uint8_t motor_current_msb = 0; // motor current MSB (1A)
+
+    uint8_t motor_voltage_lsb = 0; // motor voltage LSB (0.5V)
+    uint8_t motor_voltage_msb = 0; // motor voltage MSB (0.5V)
+
+    uint8_t motor_current_direction = 0; // motor current direction (1 = forward, 0 = reverse)
 
     /*
     float supp_batt_voltage = 0.0f; // supplemental battery voltage
