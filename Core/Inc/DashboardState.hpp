@@ -30,11 +30,6 @@ struct DashboardState {
     // blink time
     uint32_t lastBlinkTime = 0; // time of last blink
 
-    // only have these as debugging for the screen, only wanna write to screen when they are updated/changed
-    uint8_t oldHornState = 0;
-    uint8_t oldFanState = 0;
-    uint8_t oldHeadlightState = 0;
-
     // other system statuses
     uint8_t bmsStatus = 0;
     uint8_t mcStatus = 0;

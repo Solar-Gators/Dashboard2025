@@ -54,8 +54,11 @@ void UsageFault_Handler(void);
 void DebugMon_Handler(void);
 void EXTI2_IRQHandler(void);
 void DMA1_Channel1_IRQHandler(void);
+void CAN1_RX0_IRQHandler(void);
 void TIM3_IRQHandler(void);
+void TIM8_UP_IRQHandler(void);
 void UART4_IRQHandler(void);
+void DMA2_Channel2_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */
