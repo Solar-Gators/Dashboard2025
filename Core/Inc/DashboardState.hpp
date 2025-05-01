@@ -33,11 +33,15 @@ struct DashboardState {
     // other system statuses
     uint8_t bmsStatus = 0;
     uint8_t mcStatus = 0;
-    uint8_t arrayStatus = 0;
+    uint8_t arrayContactorsStatus = 0;
+    uint8_t arrayPrechargeStatus = 0;
+    uint8_t direction = 0;
 
     uint8_t old_bmsStatus = 0;
     uint8_t old_mcStatus = 0;
-    uint8_t old_arrayStatus = 0;
+    uint8_t old_arrayContactorsStatus = 0;
+    uint8_t old_arrayPrechargeStatus = 0;
+    uint8_t old_direction = 0;
 
     // uart input
     uint8_t uart_rx = 0;
@@ -47,25 +51,19 @@ struct DashboardState {
 
     // can stuff that shows up on screen
 
-    uint8_t supp_batt_voltage_lsb = 0; // supplemental battery voltage LSB (mV)
-    uint8_t supp_batt_voltage_msb = 0; // supplemental battery voltage MSB (mV)
+    uint8_t supp_batt_voltage_lsb = 0xFF; // supplemental battery voltage LSB (mV)
+    uint8_t supp_batt_voltage_msb = 0xFF; // supplemental battery voltage MSB (mV)
 
-    uint8_t motor_rpm_lsb = 0; // motor RPM LSB (1rpm)
-    uint8_t motor_rpm_msb = 0; // motor RPM MSB (1rpm)
+    uint8_t motor_rpm_lsb = 0xFF; // motor RPM LSB (1rpm)
+    uint8_t motor_rpm_msb = 0xFF; // motor RPM MSB (1rpm)
 
-    uint8_t motor_current_lsb = 0; // motor current LSB (1A)
-    uint8_t motor_current_msb = 0; // motor current MSB (1A)
+    uint8_t motor_current_lsb = 0xFF; // motor current LSB (1A)
+    uint8_t motor_current_msb = 0xFF; // motor current MSB (1A)
 
-    uint8_t motor_voltage_lsb = 0; // motor voltage LSB (0.5V)
-    uint8_t motor_voltage_msb = 0; // motor voltage MSB (0.5V)
+    uint8_t motor_voltage_lsb = 0xFF; // motor voltage LSB (0.5V)
+    uint8_t motor_voltage_msb = 0xFF; // motor voltage MSB (0.5V)
 
-    uint8_t motor_current_direction = 0; // motor current direction (1 = forward, 0 = reverse)
-
-    /*
-    float supp_batt_voltage = 0.0f; // supplemental battery voltage
-    float main_batt_power = 0.0f; // main battery power
-    float velocity = 0.0f; // velocity of the car
-    */
+    uint8_t motor_current_direction = 1; // motor current direction (1 = forward, 0 = reverse)
 
     // functions
     void reset();
@@ -74,5 +72,5 @@ struct DashboardState {
     void blinkLights(); // toggle state of blinking lights (hazards and turn signals) 
     float getSuppBattVoltage(); // get supplemental battery voltage in volts
     float getMotorPower(); // get motor power in watts
-    float getCarVelocity(); // get car velocity in m/s
+    float getCarSpeed(); // get car velocity in m/s
 };

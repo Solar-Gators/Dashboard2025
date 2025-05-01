@@ -3,7 +3,40 @@
 
 // blinkling light (hazards and turn signals) blink interval
 #define BLINK_INTERVAL_MS 500 // milliseconds
+
 #define WHEEL_CIRCUMFERENCE_IN 69.12 // inches
+
+// screen constants
+#define TEXT_SIZE             2
+#define INDICATOR_RADIUS      10
+
+#define TITLE_TEXT_X          70
+#define TITLE_TEXT_Y          10
+
+#define LABELS_TEXT_X         20 
+#define LABELS_TEXT_Y         40
+
+#define BMS_CIRCLE_X          35 
+#define MC_CIRCLE_X           75
+#define ARRAY_CONTACTORS_CIRCLE_X       150
+#define ARRAY_PRECHARGE_CIRCLE_X         250
+#define INDICATOR_CIRCLE_Y    70
+
+#define LEFT_SIGNAL_X         20
+#define RIGHT_SIGNAL_X        300
+#define SIGNAL_Y              20
+
+#define DIRECTION_TEXT_X      20
+#define DIRECTION_TEXT_Y      120
+
+#define STATS_LABELS_X               20  // where the numbers begin
+#define STATS_VALUES_X      100 // where the values begin
+#define CAR_SPEED_LABEL_Y         160
+#define MOTOR_POWER_LABEL_Y         180
+#define VOLTAGE_SUPP_BATT_LABEL_Y         200
+
+#define VALUE_WIDTH           60   // space to clear for redrawing value
+#define VALUE_HEIGHT          80   // space to clear for redrawing value
 
 // Button bitmask definitions (UART input from steering wheel)
 #define BUTTON_LEFT_TURN     (1 << 3) // left side going down
@@ -65,11 +98,13 @@
 // -------------------------
 // VCU SENSORS (CAN ID: CAN_ID_VCU_SENSORS)
 // -------------------------
-#define VCU_SENSORS_STATUS_BYTE_INDEX 7
+#define VCU_SENSORS_STATUS_BYTE_INDEX 1
 
 enum class VCU_SENSORS_STATUS_BITS {
     VCU_MC_ENABLED_BIT_POS        = 0,
-    VCU_ARRAY_ENABLED_BIT_POS     = 1,
+    VCU_ARRAY_CONTACTORS_ENABLED_BIT_POS     = 1,
+    VCU_ARRAY_PRECHARGE_ENABLED_BIT_POS      = 2,
+    VCU_DIRECTION_BIT_POS     = 3,
 };
 
 // -------------------------

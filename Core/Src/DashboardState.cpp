@@ -13,11 +13,13 @@ void DashboardState::reset() {
 
     bmsStatus = 0;
     mcStatus = 0;
-    arrayStatus = 0;
+    arrayContactorsStatus = 0;
+    arrayPrechargeStatus = 0;
 
     old_bmsStatus = 0;
     old_mcStatus = 0;
-    old_arrayStatus = 0;
+    old_arrayContactorsStatus = 0;
+    old_arrayPrechargeStatus = 0;
 
     uart_rx = 0;
     old_uart_rx = 0;
@@ -132,13 +134,35 @@ void DashboardState::blinkLights() {
 }
 
 float DashboardState::getSuppBattVoltage() {
-    return 0;
+    // convert to votls from mV
+    uint16_t voltage = (supp_batt_voltage_msb << 8) | supp_batt_voltage_lsb;
+    return (float)voltage / 1000.0f;
 }
 
 float DashboardState::getMotorPower() {
-    return 0;
+    // P = V * I
+    uint16_t temp;
+
+    // voltage (encoded in 0.5V)
+    temp = (motor_voltage_msb << 8) | motor_voltage_lsb;
+    float voltage = (float)temp / 2.0f;
+
+    // current (encoded in 1A)
+    temp = (motor_current_msb << 8) | motor_current_lsb;
+    float current = (float)temp;
+
+    if (!motor_current_direction) {
+        current *= -1.0f;
+    }
+
+    return voltage * current;
 }
 
-float DashboardState::getCarVelocity() {
-    return 0;
+float DashboardState::getCarSpeed() {
+    uint32_t motor_rpm = (motor_rpm_msb << 8) | motor_rpm_lsb;
+    // convert to m/s from rpm
+    double inches_per_sec = (motor_rpm * WHEEL_CIRCUMFERENCE_IN) / 60;
+    double miles_per_sec = inches_per_sec / 63360; // 1 mile = 63360 inches
+    float miles_per_hour = (miles_per_sec * 3600); // 1 hour = 3600 seconds
+    return miles_per_hour;
 }

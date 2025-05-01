@@ -279,106 +279,131 @@ void StartTask04(void *argument)
 
 void StartTask05(void *argument)
 {
-	/* USER CODE BEGIN StartTask05 */
 	uint16_t color;
-	bool lightStateChanged = false;
-	bool bmsStatusChanged = false;
-	bool mcStatusChanged = false;
-	bool arrayStatusChanged = false;
+    bool lightStateChanged = false;
+    bool bmsStatusChanged = false;
+    bool mcStatusChanged = false;
+	bool arrayContactorsStatusChanged = false;
+	bool arrayPrechargeStatusChanged = false;
+	bool directionChanged = false;
 
-    uint16_t x_text = 70;
-    uint16_t y_text = 10;
-    const char* str1 = "UF Solar Gators :)\0";
-    screen.SetTextSize(2);
-    screen.DrawText(x_text, y_text, str1, RGB565_BLACK);
+    screen.SetTextSize(TEXT_SIZE);
+	// title
+    screen.DrawText(TITLE_TEXT_X, TITLE_TEXT_Y, "UF Solar Gators :D\0", RGB565_BLACK);
 
-    x_text = 55;
-    y_text = 170;
-    const char* str2 = "BMS    MC    Array\0";
+	// labels (mc, array, and bms status)
+    screen.DrawText(LABELS_TEXT_X, LABELS_TEXT_Y, "BMS MC ArryCont ArryPre\0", RGB565_BLACK);
 
-    screen.SetTextSize(2);
-    screen.DrawText(x_text, y_text, str2, RGB565_BLACK);
+	// labels for stats
+	screen.DrawText(STATS_LABELS_X, CAR_SPEED_LABEL_Y, "Speed: \0", RGB565_BLACK);
+	screen.DrawText(STATS_LABELS_X, MOTOR_POWER_LABEL_Y, "Power: \0", RGB565_BLACK);
+	screen.DrawText(STATS_LABELS_X, VOLTAGE_SUPP_BATT_LABEL_Y, "VSupp: \0", RGB565_BLACK);
+                       
+	// circules for those labels lol
+    screen.FillCircle(BMS_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, RGB565_RED);
+    screen.FillCircle(MC_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, RGB565_RED);
+    screen.FillCircle(ARRAY_CONTACTORS_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, RGB565_RED);
+	screen.FillCircle(ARRAY_PRECHARGE_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, RGB565_RED);
+                       
+    for (;;)           
+    {
+        DASHBOARD_CRITICAL(
+            lightStateChanged = dashboardState.oldLightStateScreen != dashboardState.lightState;
+            bmsStatusChanged = dashboardState.old_bmsStatus != dashboardState.bmsStatus;
+            mcStatusChanged = dashboardState.old_mcStatus != dashboardState.mcStatus;
+			arrayContactorsStatusChanged = dashboardState.old_arrayContactorsStatus != dashboardState.arrayContactorsStatus;
+			arrayPrechargeStatusChanged = dashboardState.old_arrayPrechargeStatus != dashboardState.arrayPrechargeStatus;
+			directionChanged = dashboardState.old_direction != dashboardState.direction;
 
-    screen.FillCircle(70, 210, 10, RGB565_RED);
-    screen.FillCircle(150, 210, 10, RGB565_RED);
-    screen.FillCircle(235, 210, 10, RGB565_RED);
+            dashboardState.oldLightStateScreen = dashboardState.lightState;
+            dashboardState.old_bmsStatus = dashboardState.bmsStatus;
+            dashboardState.old_mcStatus = dashboardState.mcStatus;
+			dashboardState.old_arrayContactorsStatus = dashboardState.arrayContactorsStatus;
+			dashboardState.old_arrayPrechargeStatus = dashboardState.arrayPrechargeStatus;
+			dashboardState.old_direction = dashboardState.direction;
+        );
 
-  /* Infinite loop */
-  for(;;)
-  {
-	DASHBOARD_CRITICAL( // critical region for all of these read-read operations that are not atomic
-		lightStateChanged = dashboardState.oldLightStateScreen != dashboardState.lightState;
-		bmsStatusChanged = dashboardState.old_bmsStatus != dashboardState.bmsStatus;
-		mcStatusChanged = dashboardState.old_mcStatus != dashboardState.mcStatus;
-		arrayStatusChanged = dashboardState.old_arrayStatus != dashboardState.arrayStatus;
+        if (lightStateChanged) {
+            HAL_Delay(1);
+            switch (dashboardState.lightState) {
+                case LIGHTS_LEFT:
+                    screen.FillCircle(LEFT_SIGNAL_X, SIGNAL_Y, INDICATOR_RADIUS, RGB565_GREEN);
+                    screen.FillCircle(RIGHT_SIGNAL_X, SIGNAL_Y, INDICATOR_RADIUS, RGB565_WHITE);
+                    break;
+                case LIGHTS_RIGHT:
+                    screen.FillCircle(LEFT_SIGNAL_X, SIGNAL_Y, INDICATOR_RADIUS, RGB565_WHITE);
+                    screen.FillCircle(RIGHT_SIGNAL_X, SIGNAL_Y, INDICATOR_RADIUS, RGB565_GREEN);
+                    break;
+                case LIGHTS_HAZARD:
+                    screen.FillCircle(LEFT_SIGNAL_X, SIGNAL_Y, INDICATOR_RADIUS, RGB565_GREEN);
+                    screen.FillCircle(RIGHT_SIGNAL_X, SIGNAL_Y, INDICATOR_RADIUS, RGB565_GREEN);
+                    break;
+                case LIGHTS_NONE:
+                default:
+                    screen.FillCircle(LEFT_SIGNAL_X, SIGNAL_Y, INDICATOR_RADIUS, RGB565_WHITE);
+                    screen.FillCircle(RIGHT_SIGNAL_X, SIGNAL_Y, INDICATOR_RADIUS, RGB565_WHITE);
+                    break;
+            }
+        }
 
-		dashboardState.oldLightStateScreen = dashboardState.lightState;
-		dashboardState.old_bmsStatus = dashboardState.bmsStatus;
-		dashboardState.old_mcStatus = dashboardState.mcStatus;
-		dashboardState.old_arrayStatus = dashboardState.arrayStatus;
-	); // end critical section
-
-	if(lightStateChanged){
-		HAL_Delay(1);
-		if(dashboardState.lightState == LIGHTS_LEFT){
-			color = RGB565_GREEN;
-			screen.FillCircle(20, 20, 10, color);
-
-			color = RGB565_WHITE;
-			screen.FillCircle(300, 20, 10, color);
+        if (bmsStatusChanged) {
+            color = dashboardState.bmsStatus ? RGB565_GREEN : RGB565_RED;
+            screen.FillCircle(BMS_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, color);
+        }
+        if (mcStatusChanged) {
+            color = dashboardState.mcStatus ? RGB565_GREEN : RGB565_RED;
+            screen.FillCircle(MC_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, color);
+        }
+        if (arrayContactorsStatusChanged) {
+            color = dashboardState.arrayContactorsStatus ? RGB565_GREEN : RGB565_RED;
+            screen.FillCircle(ARRAY_CONTACTORS_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, color);
+        }
+		if (arrayPrechargeStatusChanged) {
+			color = dashboardState.arrayPrechargeStatus ? RGB565_GREEN : RGB565_RED;
+			screen.FillCircle(ARRAY_PRECHARGE_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, color);
 		}
-		if(dashboardState.lightState == LIGHTS_RIGHT){
-			color = RGB565_WHITE;
-			screen.FillCircle(20, 20, 10, color);
-
-			color = RGB565_GREEN;
-			screen.FillCircle(300, 20, 10, color);
+		if (directionChanged) {
+			if (dashboardState.direction) {
+				screen.DrawText(DIRECTION_TEXT_X, DIRECTION_TEXT_Y, "Forward\0", RGB565_BLACK);
+			}
+			else {
+				screen.DrawText(DIRECTION_TEXT_X, DIRECTION_TEXT_Y, "Reverse\0", RGB565_BLACK);
+			}
 		}
-		if(dashboardState.lightState == LIGHTS_HAZARD){
-			color = RGB565_GREEN;
-			screen.FillCircle(20, 20, 10, color);
 
-			color = RGB565_GREEN;
-			screen.FillCircle(300, 20, 10, color);
-		}
-		if(dashboardState.lightState == LIGHTS_NONE){
+        float supp_batt_voltage, motor_power, car_speed;
+        DASHBOARD_CRITICAL(
+            supp_batt_voltage = dashboardState.getSuppBattVoltage();
+            motor_power = dashboardState.getMotorPower();
+            car_speed = dashboardState.getCarSpeed();
+        );
 
-			color = RGB565_WHITE;
-			screen.FillCircle(20, 20, 10, color);
+		char buffer[16];
 
-			color = RGB565_WHITE;
-			screen.FillCircle(300, 20, 10, color);
-		}
-	}
-	if(bmsStatusChanged){
-		if (dashboardState.bmsStatus) color = RGB565_GREEN;
-		else color = RGB565_RED;
-		screen.FillCircle(70, 210, 10, color);
-	}
-	if(mcStatusChanged){
-		if (dashboardState.mcStatus) color = RGB565_GREEN;
-		else color = RGB565_RED;
-		screen.FillCircle(150, 210, 10, color);
-	}
-	if(arrayStatusChanged){
-		if (dashboardState.arrayStatus) color = RGB565_GREEN;
-		else color = RGB565_RED;
-		screen.FillCircle(235, 210, 10, color);
-	}
+		// clear 
+		screen.FillRect(STATS_VALUES_X, CAR_SPEED_LABEL_Y, VALUE_WIDTH, VALUE_HEIGHT, RGB565_WHITE);
 
-	// always display velocity, and power
-	float supp_batt_voltage;
-	float motor_power;
-	float car_velocity;
+		// car_speed
+		int speed_whole = (int)car_speed;
+		int speed_frac = (int)((car_speed - speed_whole) * 100);
+		snprintf(buffer, sizeof(buffer), "%d.%02d MPH", speed_whole, speed_frac);
+		screen.DrawText(STATS_VALUES_X, CAR_SPEED_LABEL_Y, buffer, RGB565_BLACK);
+		/*
+		// motor_power
+		int power_whole = (int)motor_power;
+		int power_frac = (int)((motor_power - power_whole) * 10);
+		snprintf(buffer, sizeof(buffer), "%d.%01d W", power_whole, power_frac);
+		screen.DrawText(STATS_VALUES_X, MOTOR_POWER_LABEL_Y, buffer, RGB565_BLACK);
 
-	DASHBOARD_CRITICAL(
-		supp_batt_voltage = dashboardState.getSuppBattVoltage();
-		motor_power = dashboardState.getMotorPower();
-		car_velocity = dashboardState.getCarVelocity();
-	);
+		// supp_batt_voltage
+		int voltage_whole = (int)supp_batt_voltage;
+		int voltage_frac = (int)((supp_batt_voltage - voltage_whole) * 100);
+		snprintf(buffer, sizeof(buffer), "%d.%02d V", voltage_whole, voltage_frac);
+		screen.DrawText(STATS_VALUES_X, VOLTAGE_SUPP_BATT_LABEL_Y, buffer, RGB565_BLACK);
+		*/
 
-    osDelay(100);
-  }
+        osDelay(100);
+    }	
   /* USER CODE END StartTask05 */
 }
 
@@ -556,9 +581,17 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 			statusByte, 
 			(int)VCU_SENSORS_STATUS_BITS::VCU_MC_ENABLED_BIT_POS
 		);
-		dashboardState.arrayStatus = CHECK_BIT(
+		dashboardState.arrayContactorsStatus = CHECK_BIT(
 			statusByte,
-			(int)VCU_SENSORS_STATUS_BITS::VCU_ARRAY_ENABLED_BIT_POS
+			(int)VCU_SENSORS_STATUS_BITS::VCU_ARRAY_CONTACTORS_ENABLED_BIT_POS
+		);
+		dashboardState.arrayPrechargeStatus = CHECK_BIT(
+			statusByte,
+			(int)VCU_SENSORS_STATUS_BITS::VCU_ARRAY_PRECHARGE_ENABLED_BIT_POS
+		);
+		dashboardState.direction = CHECK_BIT(
+			statusByte,
+			(int)VCU_SENSORS_STATUS_BITS::VCU_DIRECTION_BIT_POS
 		);
     }
 	// powerboard sends voltage of supplemental battery 
@@ -578,7 +611,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		);
 	}
 	// mitsuba motor sends velocity and other data?
-	else if (RxHeader.StdId == CAN_ID_MITSUBA_MOTOR_FRAME_0)
+	else if (RxHeader.ExtId == CAN_ID_MITSUBA_MOTOR_FRAME_0)
 	{
 		uint64_t full_data = 0;
 		for (int i = 0; i < 8; i++)
