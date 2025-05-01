@@ -27,6 +27,8 @@ struct DashboardState {
     uint8_t pttState = 0;
     uint8_t displayState = 0;
 
+    uint8_t old_displayState = 0;
+
     // blink time
     uint32_t lastBlinkTime = 0; // time of last blink
 
@@ -51,19 +53,21 @@ struct DashboardState {
 
     // can stuff that shows up on screen
 
-    uint8_t supp_batt_voltage_lsb = 0xFF; // supplemental battery voltage LSB (mV)
-    uint8_t supp_batt_voltage_msb = 0xFF; // supplemental battery voltage MSB (mV)
+    uint8_t supp_batt_voltage_lsb = 0x00; // supplemental battery voltage LSB (mV)
+    uint8_t supp_batt_voltage_msb = 0x00; // supplemental battery voltage MSB (mV)
 
-    uint8_t motor_rpm_lsb = 0xFF; // motor RPM LSB (1rpm)
-    uint8_t motor_rpm_msb = 0xFF; // motor RPM MSB (1rpm)
+    uint8_t motor_rpm_lsb = 0x00; // motor RPM LSB (1rpm)
+    uint8_t motor_rpm_msb = 0x00; // motor RPM MSB (1rpm)
 
-    uint8_t motor_current_lsb = 0xFF; // motor current LSB (1A)
-    uint8_t motor_current_msb = 0xFF; // motor current MSB (1A)
+    uint8_t motor_current_lsb = 0x00; // motor current LSB (1A)
+    uint8_t motor_current_msb = 0x00; // motor current MSB (1A)
 
-    uint8_t motor_voltage_lsb = 0xFF; // motor voltage LSB (0.5V)
-    uint8_t motor_voltage_msb = 0xFF; // motor voltage MSB (0.5V)
+    uint8_t motor_voltage_lsb = 0x00; // motor voltage LSB (0.5V)
+    uint8_t motor_voltage_msb = 0x00; // motor voltage MSB (0.5V)
 
     uint8_t motor_current_direction = 1; // motor current direction (1 = forward, 0 = reverse)
+
+    bool update_can_message_1 = false;
 
     // functions
     void reset();
