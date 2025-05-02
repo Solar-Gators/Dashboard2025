@@ -80,9 +80,7 @@ void StartTask01(void *argument)
 	HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
 	// also send can message to request frame 0 from mitsuba motor
 
-	int wait = 0;
-	while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) && wait++ < 10000)
-		osDelay(1);
+	while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
 	HAL_StatusTypeDef status;
 	status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 
@@ -91,11 +89,7 @@ void StartTask01(void *argument)
 		Error_Handler();
 	}
 
-<<<<<<< HEAD
-    osDelay(250);
-=======
-    osDelay(200);
->>>>>>> 16bbcd2341008eac5c228a55b1b2f8f1bc47f80a
+    osDelay(100);
   }
   /* USER CODE END 5 */
 }
@@ -175,9 +169,7 @@ void StartTask02(void *argument)
 	//Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
     // Wait until the ADC DMA completes
 	  // Send CAN messages
-	  int wait = 0;
-	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) && wait++ < 10000)
-		osDelay(1);
+	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
 	  HAL_StatusTypeDef status;
 	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 	  messages_sent++;
@@ -234,9 +226,7 @@ void StartTask03(void *argument)
 	  }
 
 	  // Send CAN messages
-	  int wait = 0;
-	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) && wait++ < 10000)
- 		osDelay(1);
+	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
 	  HAL_StatusTypeDef status;
 	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 	  messages_sent++;
@@ -442,34 +432,12 @@ void StartTask05(void *argument)
 		// clear 
 		//screen.FillRect(STATS_VALUES_X, CAR_SPEED_LABEL_Y, VALUE_WIDTH, VALUE_HEIGHT, RGB565_WHITE);
 
-<<<<<<< HEAD
-		// car_speed
-		/*
-		if(car_speed != 0){
-=======
 		if (dashboardState.mcStatus) {
 			// car_speed
->>>>>>> 16bbcd2341008eac5c228a55b1b2f8f1bc47f80a
 			int speed_whole = (int)car_speed;
 			int speed_frac = (int)((car_speed - speed_whole) * 100);
 			snprintf(buffer, sizeof(buffer), "%d.%02d MPH", speed_whole, speed_frac);
 			screen.DrawText(STATS_VALUES_X, CAR_SPEED_LABEL_Y, buffer, RGB565_BLACK);
-<<<<<<< HEAD
-		}
-		*/
-		if((new_val == true) & (speed != 0)){
-			snprintf(buffer, sizeof(buffer), "%d MPH", speed);
-			screen.DrawText(STATS_VALUES_X, CAR_SPEED_LABEL_Y, buffer, RGB565_BLACK);
-			new_val = false;
-
-		}
-		/*
-		// motor_power
-		int power_whole = (int)motor_power;
-		int power_frac = (int)((motor_power - power_whole) * 10);
-		snprintf(buffer, sizeof(buffer), "%d.%01d W", power_whole, power_frac);
-		screen.DrawText(STATS_VALUES_X, MOTOR_POWER_LABEL_Y, buffer, RGB565_BLACK);
-=======
 			
 			// motor_power
 			int power_whole = (int)motor_power;
@@ -483,7 +451,6 @@ void StartTask05(void *argument)
 			// motor_power
 			screen.DrawText(STATS_VALUES_X, MOTOR_POWER_LABEL_Y, "Need MC", RGB565_BLACK);
 		}
->>>>>>> 16bbcd2341008eac5c228a55b1b2f8f1bc47f80a
 
 		// supp_batt_voltage
 		int voltage_whole = (int)supp_batt_voltage;
@@ -491,7 +458,7 @@ void StartTask05(void *argument)
 		snprintf(buffer, sizeof(buffer), "%d.%02d V", voltage_whole, voltage_frac);
 		screen.DrawText(STATS_VALUES_X, VOLTAGE_SUPP_BATT_LABEL_Y, buffer, RGB565_BLACK);
 
-        osDelay(200);
+        osDelay(500);
     }	
   /* USER CODE END StartTask05 */
 }
@@ -662,7 +629,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     }
 
 	// vcu sends mc and array status
-    if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_VCU_SENSORS)
+    if (RxHeader.StdId == CAN_ID_VCU_SENSORS)
     {
 		uint8_t statusByte = RxData[VCU_SENSORS_STATUS_BYTE_INDEX];
 
@@ -684,13 +651,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		);
     }
 	// powerboard sends voltage of supplemental battery 
-	else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_POWERBOARD)
+	else if (RxHeader.StdId == CAN_ID_POWERBOARD)
 	{
 		dashboardState.supp_batt_voltage_lsb = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX];
 		dashboardState.supp_batt_voltage_msb = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_MSB_INDEX];
 	}
 	// bms sends contactors closed indicator and battery voltage and current
-	else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_BMS_POWER_CONSUM_INFO)
+	else if (RxHeader.StdId == CAN_ID_BMS_POWER_CONSUM_INFO)
 	{
 		uint8_t statusByte = RxData[BMS_STATUS_BYTE_INDEX];
 
