@@ -35,8 +35,8 @@
 #define MOTOR_POWER_LABEL_Y         180
 #define VOLTAGE_SUPP_BATT_LABEL_Y         200
 
-#define VALUE_WIDTH           60   // space to clear for redrawing value
-#define VALUE_HEIGHT          80   // space to clear for redrawing value
+#define VALUE_WIDTH           150   // space to clear for redrawing value
+#define VALUE_HEIGHT          60   // space to clear for redrawing value
 
 // Button bitmask definitions (UART input from steering wheel)
 #define BUTTON_LEFT_TURN     (1 << 3) // left side going down

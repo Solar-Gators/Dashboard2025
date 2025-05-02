@@ -54,6 +54,7 @@ void CPP_UserSetup(void) {
 	// SCREEN INIT 
 	// -------------------------
 	
+	HAL_Delay(100); // wait for screen to power on
     screen.Init();
     screen.SetRotation(3);
     screen.ClearScreen(RGB565_WHITE);
@@ -79,7 +80,9 @@ void StartTask01(void *argument)
 	HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
 	// also send can message to request frame 0 from mitsuba motor
 
-	while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+	int wait = 0;
+	while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) && wait++ < 10000)
+		osDelay(1);
 	HAL_StatusTypeDef status;
 	status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 
@@ -88,7 +91,11 @@ void StartTask01(void *argument)
 		Error_Handler();
 	}
 
+<<<<<<< HEAD
     osDelay(250);
+=======
+    osDelay(200);
+>>>>>>> 16bbcd2341008eac5c228a55b1b2f8f1bc47f80a
   }
   /* USER CODE END 5 */
 }
@@ -168,7 +175,9 @@ void StartTask02(void *argument)
 	//Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
     // Wait until the ADC DMA completes
 	  // Send CAN messages
-	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+	  int wait = 0;
+	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) && wait++ < 10000)
+		osDelay(1);
 	  HAL_StatusTypeDef status;
 	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 	  messages_sent++;
@@ -209,7 +218,7 @@ void StartTask03(void *argument)
 	for(;;)
 	{
 	  // Read TCAL Input and update flags
-	  if (GPIO_Interrupt_Triggered)
+	  if (GPIO_Interrupt_Triggered || dashboardState.update_can_message_1)
 	  {
 		  if (debounce_count++ <= 2) {continue;}
 		  DASHBOARD_CRITICAL(
@@ -219,11 +228,15 @@ void StartTask03(void *argument)
 
 		  Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
 		  GPIO_Interrupt_Triggered = 0;
+		  dashboardState.update_can_message_1 = 0;
 		  debounce_count = 0;
+
 	  }
 
 	  // Send CAN messages
-	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+	  int wait = 0;
+	  while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) && wait++ < 10000)
+ 		osDelay(1);
 	  HAL_StatusTypeDef status;
 	  status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 	  messages_sent++;
@@ -268,6 +281,7 @@ void StartTask04(void *argument)
 			dashboardState.updateFromUART()
 		);
 		dashboardState.updateRequested = 0; // reset update requested flag
+		dashboardState.update_can_message_1 = 1; // set flag to update CAN message 1
 	}
 
 	DASHBOARD_CRITICAL(
@@ -289,6 +303,8 @@ void StartTask05(void *argument)
 	bool arrayContactorsStatusChanged = false;
 	bool arrayPrechargeStatusChanged = false;
 	bool directionChanged = false;
+	
+	bool screenResetStatusChanged = false;
 
     screen.SetTextSize(TEXT_SIZE);
 	// title
@@ -307,6 +323,14 @@ void StartTask05(void *argument)
     screen.FillCircle(MC_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, RGB565_RED);
     screen.FillCircle(ARRAY_CONTACTORS_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, RGB565_RED);
 	screen.FillCircle(ARRAY_PRECHARGE_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, RGB565_RED);
+
+	if (dashboardState.direction) {
+		screen.DrawText(DIRECTION_TEXT_X, DIRECTION_TEXT_Y, "Forward\0", RGB565_BLACK);
+	}
+	else {
+		screen.DrawText(DIRECTION_TEXT_X, DIRECTION_TEXT_Y, "Reverse\0", RGB565_BLACK);
+	}
+
                        
     for (;;)           
     {
@@ -317,6 +341,7 @@ void StartTask05(void *argument)
 			arrayContactorsStatusChanged = dashboardState.old_arrayContactorsStatus != dashboardState.arrayContactorsStatus;
 			arrayPrechargeStatusChanged = dashboardState.old_arrayPrechargeStatus != dashboardState.arrayPrechargeStatus;
 			directionChanged = dashboardState.old_direction != dashboardState.direction;
+			screenResetStatusChanged = dashboardState.displayState != dashboardState.old_displayState;
 
             dashboardState.oldLightStateScreen = dashboardState.lightState;
             dashboardState.old_bmsStatus = dashboardState.bmsStatus;
@@ -324,7 +349,38 @@ void StartTask05(void *argument)
 			dashboardState.old_arrayContactorsStatus = dashboardState.arrayContactorsStatus;
 			dashboardState.old_arrayPrechargeStatus = dashboardState.arrayPrechargeStatus;
 			dashboardState.old_direction = dashboardState.direction;
+			dashboardState.old_displayState = dashboardState.displayState;
         );
+
+		if (screenResetStatusChanged) {
+			screen.Init();
+			screen.SetRotation(3);
+			screen.ClearScreen(RGB565_WHITE);
+			screen.SetTextSize(TEXT_SIZE);
+			// title
+			screen.DrawText(TITLE_TEXT_X, TITLE_TEXT_Y, "UF Solar Gators :D\0", RGB565_BLACK);
+
+			// labels (mc, array, and bms status)
+			screen.DrawText(LABELS_TEXT_X, LABELS_TEXT_Y, "BMS MC ArryCont ArryPre\0", RGB565_BLACK);
+
+			// labels for stats
+			screen.DrawText(STATS_LABELS_X, CAR_SPEED_LABEL_Y, "Speed: \0", RGB565_BLACK);
+			screen.DrawText(STATS_LABELS_X, MOTOR_POWER_LABEL_Y, "Power: \0", RGB565_BLACK);
+			screen.DrawText(STATS_LABELS_X, VOLTAGE_SUPP_BATT_LABEL_Y, "VSupp: \0", RGB565_BLACK);
+							
+			// circules for those labels lol
+			screen.FillCircle(BMS_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, RGB565_RED);
+			screen.FillCircle(MC_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, RGB565_RED);
+			screen.FillCircle(ARRAY_CONTACTORS_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, RGB565_RED);
+			screen.FillCircle(ARRAY_PRECHARGE_CIRCLE_X, INDICATOR_CIRCLE_Y, INDICATOR_RADIUS, RGB565_RED); 
+
+			if (dashboardState.direction) {
+				screen.DrawText(DIRECTION_TEXT_X, DIRECTION_TEXT_Y, "Forward\0", RGB565_BLACK);
+			}
+			else {
+				screen.DrawText(DIRECTION_TEXT_X, DIRECTION_TEXT_Y, "Reverse\0", RGB565_BLACK);
+			}
+		}
 
         if (lightStateChanged) {
             HAL_Delay(1);
@@ -386,13 +442,19 @@ void StartTask05(void *argument)
 		// clear 
 		//screen.FillRect(STATS_VALUES_X, CAR_SPEED_LABEL_Y, VALUE_WIDTH, VALUE_HEIGHT, RGB565_WHITE);
 
+<<<<<<< HEAD
 		// car_speed
 		/*
 		if(car_speed != 0){
+=======
+		if (dashboardState.mcStatus) {
+			// car_speed
+>>>>>>> 16bbcd2341008eac5c228a55b1b2f8f1bc47f80a
 			int speed_whole = (int)car_speed;
 			int speed_frac = (int)((car_speed - speed_whole) * 100);
 			snprintf(buffer, sizeof(buffer), "%d.%02d MPH", speed_whole, speed_frac);
 			screen.DrawText(STATS_VALUES_X, CAR_SPEED_LABEL_Y, buffer, RGB565_BLACK);
+<<<<<<< HEAD
 		}
 		*/
 		if((new_val == true) & (speed != 0)){
@@ -407,15 +469,29 @@ void StartTask05(void *argument)
 		int power_frac = (int)((motor_power - power_whole) * 10);
 		snprintf(buffer, sizeof(buffer), "%d.%01d W", power_whole, power_frac);
 		screen.DrawText(STATS_VALUES_X, MOTOR_POWER_LABEL_Y, buffer, RGB565_BLACK);
+=======
+			
+			// motor_power
+			int power_whole = (int)motor_power;
+			int power_frac = (int)((motor_power - power_whole) * 10);
+			snprintf(buffer, sizeof(buffer), "%d.%01d W", power_whole, power_frac);
+			screen.DrawText(STATS_VALUES_X, MOTOR_POWER_LABEL_Y, buffer, RGB565_BLACK);
+		}
+		else {
+			// car_speed
+			screen.DrawText(STATS_VALUES_X, CAR_SPEED_LABEL_Y, "Need MC", RGB565_BLACK);
+			// motor_power
+			screen.DrawText(STATS_VALUES_X, MOTOR_POWER_LABEL_Y, "Need MC", RGB565_BLACK);
+		}
+>>>>>>> 16bbcd2341008eac5c228a55b1b2f8f1bc47f80a
 
 		// supp_batt_voltage
 		int voltage_whole = (int)supp_batt_voltage;
 		int voltage_frac = (int)((supp_batt_voltage - voltage_whole) * 100);
 		snprintf(buffer, sizeof(buffer), "%d.%02d V", voltage_whole, voltage_frac);
 		screen.DrawText(STATS_VALUES_X, VOLTAGE_SUPP_BATT_LABEL_Y, buffer, RGB565_BLACK);
-		*/
 
-        osDelay(100);
+        osDelay(200);
     }	
   /* USER CODE END StartTask05 */
 }
@@ -586,7 +662,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     }
 
 	// vcu sends mc and array status
-    if (RxHeader.StdId == CAN_ID_VCU_SENSORS)
+    if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_VCU_SENSORS)
     {
 		uint8_t statusByte = RxData[VCU_SENSORS_STATUS_BYTE_INDEX];
 
@@ -608,13 +684,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		);
     }
 	// powerboard sends voltage of supplemental battery 
-	else if (RxHeader.StdId == CAN_ID_POWERBOARD)
+	else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_POWERBOARD)
 	{
 		dashboardState.supp_batt_voltage_lsb = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX];
 		dashboardState.supp_batt_voltage_msb = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_MSB_INDEX];
 	}
 	// bms sends contactors closed indicator and battery voltage and current
-	else if (RxHeader.StdId == CAN_ID_BMS_POWER_CONSUM_INFO)
+	else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_BMS_POWER_CONSUM_INFO)
 	{
 		uint8_t statusByte = RxData[BMS_STATUS_BYTE_INDEX];
 
@@ -624,7 +700,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		);
 	}
 	// mitsuba motor sends velocity and other data?
-	else if (RxHeader.ExtId == CAN_ID_MITSUBA_MOTOR_FRAME_0)
+	else if (RxHeader.IDE == CAN_ID_EXT && RxHeader.ExtId == CAN_ID_MITSUBA_MOTOR_FRAME_0)
 	{
 
 		speed = ((RxData[5] & 0x7F) << 5) | (RxData[6] >> 3);
@@ -634,8 +710,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		uint64_t full_data = 0;
 		for (int i = 0; i < 8; i++)
 		{
-			full_data |= (uint64_t)RxData[i] << (i * 8);
+			full_data = (full_data << 8) | RxData[7 - i]; // lsb first
 		}
+
 		uint16_t motor_rpm = (full_data >> MITSUBA_RPM_VELOCITY_LSB_BIT_INDEX) & ((1 << MITSUBA_RPM_VELOCITY_LEN) - 1);
 		uint16_t motor_voltage = (full_data >> MITSUBA_VOLTAGE_LSB_BIT_INDEX) & ((1 << MITSUBA_VOLTAGE_LEN) - 1);
 		uint16_t motor_current = (full_data >> MITSUBA_CURRENT_LSB_BIT_INDEX) & ((1 << MITSUBA_CURRENT_LEN) - 1);
