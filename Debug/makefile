@@ -89,8 +89,8 @@ all: main-build
 main-build: Dashbaord2025.elf secondary-outputs
 
 # Tool invocations
-Dashbaord2025.elf Dashbaord2025.map: $(OBJS) $(USER_OBJS) C:\msys64\home\funny\solar-gators\Dashboard2025\STM32L496RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "Dashbaord2025.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\msys64\home\funny\solar-gators\Dashboard2025\STM32L496RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Dashbaord2025.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Dashbaord2025.elf Dashbaord2025.map: $(OBJS) $(USER_OBJS) C:\Users\samrb\Downloads\Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a\Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a\STM32L496RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "Dashbaord2025.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\samrb\Downloads\Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a\Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a\STM32L496RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Dashbaord2025.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

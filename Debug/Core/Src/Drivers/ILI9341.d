@@ -1,5 +1,5 @@
 Core/Src/Drivers/ILI9341.o: ../Core/Src/Drivers/ILI9341.cpp \
- C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp \
+ C:/Users/samrb/Downloads/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Core/Inc/Drivers/ILI9341.hpp \
  ../Core/Inc/main.h ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
  ../Core/Inc/stm32l4xx_hal_conf.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h \
@@ -37,7 +37,7 @@ Core/Src/Drivers/ILI9341.o: ../Core/Src/Drivers/ILI9341.cpp \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
  ../Core/Inc/Drivers/TCAL9538RSVR.h \
- C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341_CMD.hpp \
+ C:/Users/samrb/Downloads/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Core/Inc/Drivers/ILI9341_CMD.hpp \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
  ../Core/Inc/FreeRTOSConfig.h \
@@ -50,7 +50,7 @@ Core/Src/Drivers/ILI9341.o: ../Core/Src/Drivers/ILI9341.cpp \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
  ../Core/Src/Drivers/GfxFont.h
-C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp:
+C:/Users/samrb/Downloads/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Core/Inc/Drivers/ILI9341.hpp:
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -89,7 +89,7 @@ C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
 ../Core/Inc/Drivers/TCAL9538RSVR.h:
-C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341_CMD.hpp:
+C:/Users/samrb/Downloads/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Core/Inc/Drivers/ILI9341_CMD.hpp:
 ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
 ../Core/Inc/FreeRTOSConfig.h:

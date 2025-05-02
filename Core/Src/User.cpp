@@ -14,6 +14,9 @@ DashboardState dashboardState; // Dashboard state object
 
 ILI9341 screen(320, 240);
 
+uint16_t speed;
+bool new_val;
+
 void CPP_UserSetup(void) {
     // Make sure that timer priorities are configured correctly
     HAL_Delay(10);
@@ -85,7 +88,7 @@ void StartTask01(void *argument)
 		Error_Handler();
 	}
 
-    osDelay(500);
+    osDelay(250);
   }
   /* USER CODE END 5 */
 }
@@ -381,13 +384,23 @@ void StartTask05(void *argument)
 		char buffer[16];
 
 		// clear 
-		screen.FillRect(STATS_VALUES_X, CAR_SPEED_LABEL_Y, VALUE_WIDTH, VALUE_HEIGHT, RGB565_WHITE);
+		//screen.FillRect(STATS_VALUES_X, CAR_SPEED_LABEL_Y, VALUE_WIDTH, VALUE_HEIGHT, RGB565_WHITE);
 
 		// car_speed
-		int speed_whole = (int)car_speed;
-		int speed_frac = (int)((car_speed - speed_whole) * 100);
-		snprintf(buffer, sizeof(buffer), "%d.%02d MPH", speed_whole, speed_frac);
-		screen.DrawText(STATS_VALUES_X, CAR_SPEED_LABEL_Y, buffer, RGB565_BLACK);
+		/*
+		if(car_speed != 0){
+			int speed_whole = (int)car_speed;
+			int speed_frac = (int)((car_speed - speed_whole) * 100);
+			snprintf(buffer, sizeof(buffer), "%d.%02d MPH", speed_whole, speed_frac);
+			screen.DrawText(STATS_VALUES_X, CAR_SPEED_LABEL_Y, buffer, RGB565_BLACK);
+		}
+		*/
+		if((new_val == true) & (speed != 0)){
+			snprintf(buffer, sizeof(buffer), "%d MPH", speed);
+			screen.DrawText(STATS_VALUES_X, CAR_SPEED_LABEL_Y, buffer, RGB565_BLACK);
+			new_val = false;
+
+		}
 		/*
 		// motor_power
 		int power_whole = (int)motor_power;
@@ -613,6 +626,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	// mitsuba motor sends velocity and other data?
 	else if (RxHeader.ExtId == CAN_ID_MITSUBA_MOTOR_FRAME_0)
 	{
+
+		speed = ((RxData[5] & 0x7F) << 5) | (RxData[6] >> 3);
+		new_val = true;
+
+		/*
 		uint64_t full_data = 0;
 		for (int i = 0; i < 8; i++)
 		{
@@ -629,6 +647,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		dashboardState.motor_current_lsb = motor_current & 0xFF;
 		dashboardState.motor_current_msb = (motor_current >> 8) & 0xFF;
 		dashboardState.motor_current_direction = motor_current_direction;
+		*/
+
 	}
 }
 

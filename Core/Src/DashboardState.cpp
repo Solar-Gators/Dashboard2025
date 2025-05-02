@@ -159,7 +159,7 @@ float DashboardState::getMotorPower() {
 }
 
 float DashboardState::getCarSpeed() {
-    uint32_t motor_rpm = (motor_rpm_msb << 8) | motor_rpm_lsb;
+    uint32_t motor_rpm = ((uint32_t)motor_rpm_msb << 8) | motor_rpm_lsb;
     // convert to m/s from rpm
     double inches_per_sec = (motor_rpm * WHEEL_CIRCUMFERENCE_IN) / 60;
     double miles_per_sec = inches_per_sec / 63360; // 1 mile = 63360 inches

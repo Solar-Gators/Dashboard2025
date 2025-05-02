@@ -47,9 +47,9 @@ Core/Src/User.o: ../Core/Src/User.cpp ../Core/Inc/User.hpp \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
- C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h \
+ C:/Users/samrb/Downloads/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Core/Inc/Drivers/TCAL9538RSVR.h \
  ../Core/Inc/defines.hpp \
- C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp \
+ C:/Users/samrb/Downloads/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Core/Inc/Drivers/ILI9341.hpp \
  ../Core/Inc/main.h ../Core/Inc/DashboardState.hpp
 ../Core/Inc/User.hpp:
 ../Core/Inc/main.h:
@@ -101,8 +101,8 @@ Core/Src/User.o: ../Core/Src/User.cpp ../Core/Inc/User.hpp \
 ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h:
-C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h:
+C:/Users/samrb/Downloads/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Core/Inc/Drivers/TCAL9538RSVR.h:
 ../Core/Inc/defines.hpp:
-C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp:
+C:/Users/samrb/Downloads/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Dashboard2025-f9fc1c9614cd094ea30e5a81c4da64a29998663a/Core/Inc/Drivers/ILI9341.hpp:
 ../Core/Inc/main.h:
 ../Core/Inc/DashboardState.hpp:
