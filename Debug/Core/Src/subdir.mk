@@ -11,6 +11,7 @@ CPP_SRCS += \
 
 C_SRCS += \
 ../Core/Src/freertos.c \
+../Core/Src/main.c \
 ../Core/Src/stm32l4xx_hal_msp.c \
 ../Core/Src/stm32l4xx_hal_timebase_tim.c \
 ../Core/Src/stm32l4xx_it.c \
@@ -20,6 +21,7 @@ C_SRCS += \
 
 C_DEPS += \
 ./Core/Src/freertos.d \
+./Core/Src/main.d \
 ./Core/Src/stm32l4xx_hal_msp.d \
 ./Core/Src/stm32l4xx_hal_timebase_tim.d \
 ./Core/Src/stm32l4xx_it.d \
