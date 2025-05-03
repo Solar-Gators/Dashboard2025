@@ -420,6 +420,7 @@ void StartTask05(void *argument)
         char buffer[16];
 
         DASHBOARD_CRITICAL(
+			screen.DrawRect(STATS_LABELS_X, CAR_SPEED_LABEL_Y, VALUE_WIDTH, VALUE_HEIGHT, RGB565_WHITE);
             if (dashboardState.mcStatus) {
                 int speed_whole = (int)car_speed;
                 int speed_frac = (int)((car_speed - speed_whole) * 100);
