@@ -3070,13 +3070,13 @@ void StartTask05(void *argument)
 
         DASHBOARD_CRITICAL(
  8001b86:	f00c fc77 	bl	800e478 <vPortEnterCritical>
- 8001b8a:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+ 8001b8a:	f44f 4378 	mov.w	r3, #63488	@ 0xf800
  8001b8e:	9301      	str	r3, [sp, #4]
  8001b90:	233c      	movs	r3, #60	@ 0x3c
  8001b92:	9300      	str	r3, [sp, #0]
  8001b94:	2396      	movs	r3, #150	@ 0x96
  8001b96:	22a0      	movs	r2, #160	@ 0xa0
- 8001b98:	2114      	movs	r1, #20
+ 8001b98:	2164      	movs	r1, #100	@ 0x64
  8001b9a:	484f      	ldr	r0, [pc, #316]	@ (8001cd8 <_Z11StartTask05Pv+0x554>)
  8001b9c:	f002 fb0f 	bl	80041be <_ZN7ILI93418DrawRectEttttt>
  8001ba0:	4b4e      	ldr	r3, [pc, #312]	@ (8001cdc <_Z11StartTask05Pv+0x558>)
