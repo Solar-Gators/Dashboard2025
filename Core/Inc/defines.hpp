@@ -18,8 +18,8 @@
 
 #define BMS_CIRCLE_X          35 
 #define MC_CIRCLE_X           75
-#define ARRAY_CONTACTORS_CIRCLE_X       150
-#define ARRAY_PRECHARGE_CIRCLE_X         250
+#define ARRAY_CIRCLE_X       125
+#define REGEN_BRAKING_CIRCLE_X 175
 #define INDICATOR_CIRCLE_Y    70
 
 #define LEFT_SIGNAL_X         20
@@ -102,8 +102,7 @@
 
 enum class VCU_SENSORS_STATUS_BITS {
     VCU_MC_ENABLED_BIT_POS        = 0,
-    VCU_ARRAY_CONTACTORS_ENABLED_BIT_POS     = 1,
-    VCU_ARRAY_PRECHARGE_ENABLED_BIT_POS      = 2,
+    VCU_ARRAY_ENABLED_BIT_POS      = 2,
     VCU_DIRECTION_BIT_POS     = 3,
 };
 

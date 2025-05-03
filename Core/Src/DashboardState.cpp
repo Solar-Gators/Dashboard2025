@@ -13,13 +13,13 @@ void DashboardState::reset() {
 
     bmsStatus = 0;
     mcStatus = 0;
-    arrayContactorsStatus = 0;
-    arrayPrechargeStatus = 0;
+    arrayStatus = 0;
+    direction = 0;
 
     old_bmsStatus = 0;
     old_mcStatus = 0;
-    old_arrayContactorsStatus = 0;
-    old_arrayPrechargeStatus = 0;
+    old_arrayStatus = 0;
+    old_direction = 0;
 
     uart_rx = 0;
     old_uart_rx = 0;

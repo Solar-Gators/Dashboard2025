@@ -35,15 +35,20 @@ struct DashboardState {
     // other system statuses
     uint8_t bmsStatus = 0;
     uint8_t mcStatus = 0;
-    uint8_t arrayContactorsStatus = 0;
-    uint8_t arrayPrechargeStatus = 0;
+    uint8_t arrayStatus = 0;
     uint8_t direction = 0;
+    uint8_t regenBraking = 0;
 
     uint8_t old_bmsStatus = 0;
     uint8_t old_mcStatus = 0;
-    uint8_t old_arrayContactorsStatus = 0;
-    uint8_t old_arrayPrechargeStatus = 0;
+    uint8_t old_arrayStatus = 0;
     uint8_t old_direction = 0;
+    uint8_t old_regenBraking = 0;
+
+    uint8_t desiredBMSStatus = 0;
+    uint8_t old_desiredBMSStatus = 0;
+    uint8_t desiredArrayStatus = 0;
+    uint8_t old_desiredArrayStatus = 0;
 
     // uart input
     uint8_t uart_rx = 0;
