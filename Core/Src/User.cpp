@@ -38,7 +38,7 @@ void CPP_UserSetup(void) {
 	// -------------------------
 
     if (TCAL9538RSVR_INIT(&U5, &hi2c4, 0b10, 0xFF, 0x00) != HAL_OK) { Error_Handler(); } // inputs
-    if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0b00111111, 0b11000000) != HAL_OK) { Error_Handler(); }
+    if (TCAL9538RSVR_INIT(&U16, &hi2c4, 0b01, 0xFF, 0x00) != HAL_OK) { Error_Handler(); }
     if (TCAL9538RSVR_INIT(&U7, &hi2c4, 0x00, 0b00000000, 0b00000000) != HAL_OK) { Error_Handler(); } // output
 
     // set outputs to low to start
@@ -165,7 +165,6 @@ void StartTask02(void *argument)
 	TxData[0] = 0;
 	TxData[1] = adc_data[0];
 	TxData[2] = adc_data[1];
-	//Update_CAN_Message1(TxData, &U5.portValues, &U16.portValues);
     // Wait until the ADC DMA completes
 	  // Send CAN messages
 	  int wait = 0;
@@ -200,7 +199,7 @@ void StartTask03(void *argument)
 	uint32_t TxMailbox = { 0 };
 
 	TxHeader.IDE = CAN_ID_STD; // Standard ID (not extended)
-	TxHeader.StdId = 0x7FF; // 11 bit Identifier !!Change!!
+	TxHeader.StdId = 0x7FF; // 11 bit Identifier !!Change!! lol still need to change
 	TxHeader.RTR = CAN_RTR_DATA; // Std RTR Data frame
 	TxHeader.DLC = 8; // 8 bytes being transmitted
 	TxData[0] = 1;
@@ -484,20 +483,28 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	// Detect rising edges for each flag
 	uint8_t risingEdges_flag1 = (~prev_input1) & *Input1;
 	uint8_t risingEdges_flag2 = (~prev_input2) & *Input2;
+	uint8_t changedEdges_flag2 = (*Input2) ^ prev_input2;
 
+	flags[1] ^= CHECK_BIT(changedEdges_flag2, 4) << 0; // Main
+	if (CHECK_BIT(*Input2, 5)) // Break
+	{
+		flags[1] |= (1 << 1); // Break
+	}
+	else
+	{
+		flags[1] &= ~(1 << 1); // Break
+	}
 
-	flags[1] ^= CHECK_BIT(risingEdges_flag2, 4) << 0; // Main
-	flags[1] ^= CHECK_BIT(risingEdges_flag2, 5) << 1; // Break
 	// CHECK_BIT(risingEdges_flag2, 1) all unused buttons
 	// CHECK_BIT(risingEdges_flag2, 2)
 	// CHECK_BIT(risingEdges_flag2, 3)
-
 	flags[2] ^= CHECK_BIT(risingEdges_flag2, 0) << 4; // regen breaking
 
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 4) << 2; // Array
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 5) << 3; // BMS Contactors
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 6) << 4; // MC Enable
 	flags[1] ^= CHECK_BIT(risingEdges_flag1, 7) << 5; // Direction
+
 
 	dashboardState.desiredBMSStatus = flags[1] & (1 << 3); // Desired BMS contactors status (0 = open, 1 = closed) 
 	dashboardState.regenBraking = flags[2] & (1 << 4); // Regen braking (0 = off, 1 = on)
