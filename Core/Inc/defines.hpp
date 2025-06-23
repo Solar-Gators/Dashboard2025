@@ -33,7 +33,7 @@
 #define STATS_VALUES_X      100 // where the values begin
 #define CAR_SPEED_LABEL_Y         160
 #define MOTOR_POWER_LABEL_Y         180
-#define VOLTAGE_SUPP_BATT_LABEL_Y         200
+#define VOLTAGE_SUPP_BATT_LABEL_Y        200 
 
 #define VALUE_WIDTH           150   // space to clear for redrawing value
 #define VALUE_HEIGHT          60   // space to clear for redrawing value
@@ -109,8 +109,8 @@ enum class VCU_SENSORS_STATUS_BITS {
 // -------------------------
 // POWER BOARD (CAN ID: CAN_ID_POWERBOARD)
 // -------------------------
-#define POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX 2
-#define POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_MSB_INDEX 3
+#define POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX 1
+#define POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_MSB_INDEX 4
 
 // -------------------------
 // BMS STATUS FULL BATT INFO (CAN ID: CAN_ID_BMS_FULL_BATT_INFOR)

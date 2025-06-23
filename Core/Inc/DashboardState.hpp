@@ -74,6 +74,11 @@ struct DashboardState {
 
     bool update_can_message_1 = false;
 
+    uint8_t supp_batt_0_mv = 0; // milliVolts, lsb
+    uint8_t supp_batt_1_mv = 0;
+    uint8_t supp_batt_2_mv = 0;
+    uint8_t supp_batt_3_mv = 0; // msb
+
     // functions
     void reset();
     void updateFromUART();  // update dashboard state from UART input

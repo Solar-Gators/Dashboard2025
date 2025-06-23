@@ -435,9 +435,13 @@ void StartTask05(void *argument)
                 screen.DrawText(STATS_VALUES_X, MOTOR_POWER_LABEL_Y, "Need MC", RGB565_BLACK);
             }
 
-            int voltage_whole = (int)supp_batt_voltage;
-            int voltage_frac = (int)((supp_batt_voltage - voltage_whole) * 100);
-            snprintf(buffer, sizeof(buffer), "%d.%02d V", voltage_whole, voltage_frac);
+			uint32_t supp_batt_voltage_mV = dashboardState.supp_batt_0_mv |
+				(dashboardState.supp_batt_1_mv << 8) |
+				(dashboardState.supp_batt_2_mv << 16) |
+				(dashboardState.supp_batt_3_mv << 24);
+			int voltage_whole = supp_batt_voltage_mV / 1000;
+			int voltage_frac = (supp_batt_voltage_mV % 1000) / 10;
+			snprintf(buffer, sizeof(buffer), "%d.%02d V", voltage_whole, voltage_frac);
             screen.DrawText(STATS_VALUES_X, VOLTAGE_SUPP_BATT_LABEL_Y, buffer, RGB565_BLACK);
         );
 
@@ -686,8 +690,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	// powerboard sends voltage of supplemental battery 
 	else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_POWERBOARD)
 	{
-		dashboardState.supp_batt_voltage_lsb = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX];
-		dashboardState.supp_batt_voltage_msb = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_MSB_INDEX];
+		dashboardState.supp_batt_0_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX];
+		dashboardState.supp_batt_1_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX+1];
+		dashboardState.supp_batt_2_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX+2];
+		dashboardState.supp_batt_3_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX+3];
 	}
 	// bms sends contactors closed indicator and battery voltage and current
 	else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_BMS_POWER_CONSUM_INFO)

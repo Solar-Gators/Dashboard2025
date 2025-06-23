@@ -1,6 +1,6 @@
 Core/Src/DashboardState.o: ../Core/Src/DashboardState.cpp \
  ../Core/Inc/DashboardState.hpp ../Core/Inc/defines.hpp \
- C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h \
+ C:/Users/justin/Documents/programming-projects/solar-gators/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
  ../Core/Inc/stm32l4xx_hal_conf.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h \
@@ -37,11 +37,11 @@ Core/Src/DashboardState.o: ../Core/Src/DashboardState.cpp \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
- C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp \
+ C:/Users/justin/Documents/programming-projects/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp \
  ../Core/Inc/main.h ../Core/Inc/Drivers/TCAL9538RSVR.h
 ../Core/Inc/DashboardState.hpp:
 ../Core/Inc/defines.hpp:
-C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h:
+C:/Users/justin/Documents/programming-projects/solar-gators/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h:
@@ -78,6 +78,6 @@ C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/TCAL9538RSVR.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
-C:/msys64/home/funny/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp:
+C:/Users/justin/Documents/programming-projects/solar-gators/Dashboard2025/Core/Inc/Drivers/ILI9341.hpp:
 ../Core/Inc/main.h:
 ../Core/Inc/Drivers/TCAL9538RSVR.h:
