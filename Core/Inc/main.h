@@ -88,6 +88,10 @@ void Error_Handler(void);
 #define Parallel_CS_GPIO_Port GPIOB
 #define OK_LED_Pin GPIO_PIN_8
 #define OK_LED_GPIO_Port GPIOA
+#define ERROR_LED_Pin GPIO_PIN_9
+#define ERROR_LED_GPIO_Port GPIOA
+#define STROBE_LED_Pin GPIO_PIN_10
+#define STROBE_LED_GPIO_Port GPIOA
 #define D_C_Pin GPIO_PIN_4
 #define D_C_GPIO_Port GPIOB
 

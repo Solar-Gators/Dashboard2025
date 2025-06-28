@@ -788,6 +788,9 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+    // very quickly strobe ok led to indicate error - the error one on the board is not working
+    HAL_GPIO_TogglePin(OK_LED_GPIO_Port, OK_LED_Pin);
+    HAL_Delay(250);
   }
   /* USER CODE END Error_Handler_Debug */
 }

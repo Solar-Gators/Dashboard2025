@@ -62,7 +62,7 @@ void StartTask01(void *argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
-  CAN_TxHeaderTypeDef TxHeader;
+  	CAN_TxHeaderTypeDef TxHeader;
 	uint8_t TxData[8] = { 0 };
 	uint32_t TxMailbox = { 0 };
 
@@ -72,24 +72,24 @@ void StartTask01(void *argument)
 	TxHeader.DLC = 1;
 	TxData[0] = 1; // bit 0 = request for frame 0
 
-  for(;;)
-  {
-	HAL_GPIO_TogglePin(GPIOA, OK_LED_Pin);
-	// also send can message to request frame 0 from mitsuba motor
+	for(;;) {
+		// toggle ok LED
+		HAL_GPIO_TogglePin(OK_LED_GPIO_Port, OK_LED_Pin);
 
-	int wait = 0;
-	while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) && wait++ < 10000)
-		osDelay(1);
-	HAL_StatusTypeDef status;
-	status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+		// also send can message to request frame 0 from mitsuba motor
+		int wait = 0;
+		while (!HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) && wait++ < 10000)
+			osDelay(1);
+		HAL_StatusTypeDef status;
+		status = HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 
-	if (status == HAL_ERROR)
-	{
-		Error_Handler();
-	}
+		if (status == HAL_ERROR)
+		{
+			Error_Handler();
+		}
 
-    osDelay(200);
-  }
+		osDelay(200);
+  	}
   /* USER CODE END 5 */
 }
 
@@ -103,24 +103,21 @@ void StartTask02(void *argument)
 	uint64_t messages_sent = 0;
 	static uint8_t update_cc = 0;
 
-	CAN_TxHeaderTypeDef TxHeader;
-	uint8_t TxData[8] = { 0 };
+	CAN_TxHeaderTypeDef TxHeader = { 0 };
 	uint32_t TxMailbox = { 0 };
+	uint8_t TxData[8] = { 0 };
 
 	TxHeader.IDE = CAN_ID_STD; // Standard ID (not extended)
 	TxHeader.StdId = 0x0; // 11 bit Identifier
 	TxHeader.RTR = CAN_RTR_DATA; // Std RTR Data frame
 	TxHeader.DLC = 8; // 8 bytes being transmitted
-	TxData[0] = 1;
-
+	TxData[0] = 0;
 
 	// Start ADC with DMA
 	uint8_t adc_data[2];
 
-
-
   	  // Transmit over CAN
-  	  HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
+  	HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 
 
   for (;;)
@@ -194,7 +191,7 @@ void StartTask03(void *argument)
 	int HAL_CAN_BUSY = 0;
 	uint64_t messages_sent = 0;
 
-	CAN_TxHeaderTypeDef TxHeader;
+	CAN_TxHeaderTypeDef TxHeader = { 0 };
 	uint8_t TxData[8] = { 0 };
 	uint32_t TxMailbox = { 0 };
 
@@ -409,9 +406,8 @@ void StartTask05(void *argument)
             );
         }
 
-        float supp_batt_voltage, motor_power, car_speed;
+        float motor_power, car_speed;
         DASHBOARD_CRITICAL(
-            supp_batt_voltage = dashboardState.getSuppBattVoltage();
             motor_power = dashboardState.getMotorPower();
             car_speed = dashboardState.getCarSpeed();
         );
@@ -568,24 +564,7 @@ void CruiseControlManagement()
 
 void Init_CAN_Filter1(CAN_HandleTypeDef &hcan1)
 {
-	/*
-  CAN_FilterTypeDef canfilterconfig;
-  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
-  canfilterconfig.FilterBank = 18;
-  canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-  canfilterconfig.FilterMode = CAN_FILTERMODE_IDLIST;
-  canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
-  canfilterconfig.SlaveStartFilterBank = 20;
-
-  // CAN ID"S TO ACCEPT GO HERE, 4 ACCEPTED IN LIST MODE
-  canfilterconfig.FilterIdHigh = CAN_ID_VCU_SENSORS << 5;
-  canfilterconfig.FilterIdLow = CAN_ID_POWERBOARD << 5;
-  canfilterconfig.FilterMaskIdHigh = CAN_ID_BMS_POWER_CONSUM_INFO << 5;
-  canfilterconfig.FilterMaskIdLow = (uint32_t)CAN_ID_MITSUBA_MOTOR_FRAME_0 << 5;
-
-  HAL_CAN_ConfigFilter(&hcan1, &canfilterconfig);
-*/
-  CAN_FilterTypeDef filter = {0};
+  	CAN_FilterTypeDef filter = {0};
     filter.FilterActivation = ENABLE;
     filter.FilterBank = 0;
     filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
