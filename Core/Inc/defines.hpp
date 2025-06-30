@@ -85,7 +85,7 @@
 // CAN Message IDs
 #define CAN_ID_ANALOG_INPUTS          0x000 // throttle and cc
 #define CAN_ID_CRITICAL_SWITCHES      0x001  
-#define CAN_ID_VCU_SENSORS            0x002
+#define CAN_ID_VCU_SENSORS            0x007
 #define CAN_ID_POWERBOARD             0x003
 #define CAN_ID_BMS_FULL_BATT_INFO 0x004
 #define CAN_ID_BMS_POWER_CONSUM_INFO 0x006
