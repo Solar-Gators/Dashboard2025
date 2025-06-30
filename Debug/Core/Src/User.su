@@ -12,7 +12,7 @@
 ../Core/Src/User.cpp:631:6:void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef*)	16	static
 ../Core/Src/User.cpp:636:6:void HAL_GPIO_EXTI_Callback(uint16_t)	16	static
 ../Core/Src/User.cpp:641:6:void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef*)	96	static
-../Core/Src/User.cpp:708:1:void __static_initialization_and_destruction_0()	8	static
-../Core/Src/User.cpp:708:1:void __static_initialization_and_destruction_1()	8	static
-../Core/Src/User.cpp:708:1:cpp)	8	static
-../Core/Src/User.cpp:708:1:cpp)	8	static
+../Core/Src/User.cpp:703:1:void __static_initialization_and_destruction_0()	8	static
+../Core/Src/User.cpp:703:1:void __static_initialization_and_destruction_1()	8	static
+../Core/Src/User.cpp:703:1:cpp)	8	static
+../Core/Src/User.cpp:703:1:cpp)	8	static

@@ -128,11 +128,8 @@ enum class VCU_SENSORS_STATUS_BITS {
 // -------------------------
 // BMS STATUS POWER CONSUMPTION INFO (CAN ID: CAN_ID_BMS_POWER_CONSUM_INFO)
 // -------------------------
-#define BMS_STATUS_BYTE_INDEX 7
+#define BMS_CONTACTORS_CLOSED_INDEX 5 // 1 = closed
 
-enum class BMS_STATUS_BITS {
-    BMS_CONTACTORS_CLOSED_BIT_POS   = 0,
-};
 
 // --------------------------
 // MITSUBA MOTOR (CAN ID: CAN_ID_MITSUBA_MOTOR)

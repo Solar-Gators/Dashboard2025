@@ -674,15 +674,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		dashboardState.supp_batt_2_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX+2];
 		dashboardState.supp_batt_3_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX+3];
 	}
-	// bms sends contactors closed indicator and battery voltage and current
+	// bms sends contactors closed indicator and other power stuff that we are ignoring on dashboard
 	else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_BMS_POWER_CONSUM_INFO)
 	{
-		uint8_t statusByte = RxData[BMS_STATUS_BYTE_INDEX];
-
-		dashboardState.bmsStatus = CHECK_BIT(
-			statusByte,
-			(int)BMS_STATUS_BITS::BMS_CONTACTORS_CLOSED_BIT_POS
-		);
+		dashboardState.bmsStatus = RxData[BMS_CONTACTORS_CLOSED_INDEX]; 
 	}
 	// mitsuba motor sends velocity and other data?
 	else if (RxHeader.IDE == CAN_ID_EXT && RxHeader.ExtId == CAN_ID_MITSUBA_MOTOR_FRAME_0)
