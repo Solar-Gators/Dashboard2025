@@ -53,7 +53,7 @@ void CPP_UserSetup(void) {
 	
 	HAL_Delay(100); // wait for screen to power on
     screen.Init();
-    screen.SetRotation(3);
+    screen.SetRotation(1);
     screen.ClearScreen(RGB565_WHITE);
 }
 
@@ -584,7 +584,7 @@ void Init_CAN_Filter1(CAN_HandleTypeDef &hcan1)
 void Init_Screen(ILI9341 &screen)
 {
 	screen.Init();
-	screen.SetRotation(3);
+	screen.SetRotation(1);
 	screen.ClearScreen(RGB565_WHITE);
 	screen.SetTextSize(TEXT_SIZE);
 
