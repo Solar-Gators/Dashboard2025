@@ -194,6 +194,7 @@ void StartTask03(void *argument)
 	CAN_TxHeaderTypeDef TxHeader = { 0 };
 	uint8_t TxData[8] = { 0 };
 	uint32_t TxMailbox = { 0 };
+	TxData[1] |= (1 << 5); // Set direction to forward to start
 
 	TxHeader.IDE = CAN_ID_STD; // Standard ID (not extended)
 	TxHeader.StdId = 0x7FF; // 11 bit Identifier !!Change!! lol still need to change
