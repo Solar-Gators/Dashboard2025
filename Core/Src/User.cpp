@@ -439,7 +439,10 @@ void StartTask05(void *argument)
 			int voltage_whole = supp_batt_voltage_mV / 1000;
 			int voltage_frac = (supp_batt_voltage_mV % 1000) / 10;
 			snprintf(buffer, sizeof(buffer), "%d.%02d V", voltage_whole, voltage_frac);
+			char str[4];
             screen.DrawText(STATS_VALUES_X, VOLTAGE_SUPP_BATT_LABEL_Y, buffer, RGB565_BLACK);
+			sprintf(str, "%d", dashboardState.dead_bms_message_code);
+			screen.DrawText(20, 220, str, RGB565_BLACK);2
         );
 
         osDelay(200);
@@ -487,7 +490,7 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	uint8_t changedEdges_flag2 = (*Input2) ^ prev_input2;
 
 	flags[1] ^= CHECK_BIT(changedEdges_flag2, 4) << 0; // Main
-	if (CHECK_BIT(*Input2, 5)) // Break
+	if (CHECK_BIT(*Input2, 5) || dashboardState.brake_debug) // Break
 	{
 		flags[1] |= (1 << 1); // Break
 	}
@@ -679,6 +682,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_BMS_POWER_CONSUM_INFO)
 	{
 		dashboardState.bmsStatus = RxData[BMS_CONTACTORS_CLOSED_INDEX]; 
+		dashboardState.dead_bms_message_code = RxData[0];
 	}
 	// mitsuba motor sends velocity and other data?
 	else if (RxHeader.IDE == CAN_ID_EXT && RxHeader.ExtId == CAN_ID_MITSUBA_MOTOR_FRAME_0)

@@ -96,9 +96,11 @@ void DashboardState::updateFromUART() {
     // if PTT should be on
     if (uart_rx & BUTTON_PTT) {
         pttState = 1;
+        brake_debug = 1;
     }
     else {
         pttState = 0;
+        brake_debug = 0;
     }
 
     // TODO: do something with displayState cause this isn't setup to go anywhere

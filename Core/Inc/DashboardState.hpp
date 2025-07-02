@@ -20,7 +20,7 @@ struct DashboardState {
     LightState oldLightState = LIGHTS_NONE;
 
     // outputs
-    uint8_t outputPortState = 0;
+    uint8_t outputPortState = (OUTPUT_FAN_CTRL);
     uint8_t hornState = 0;
     uint8_t fanState = 0;
     uint8_t headlightState = 0;
@@ -78,6 +78,10 @@ struct DashboardState {
     uint8_t supp_batt_1_mv = 0;
     uint8_t supp_batt_2_mv = 0;
     uint8_t supp_batt_3_mv = 0; // msb
+
+    uint8_t brake_debug = 0;
+
+    uint8_t dead_bms_message_code = 0;
 
     // functions
     void reset();
