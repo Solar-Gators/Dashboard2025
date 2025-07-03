@@ -442,7 +442,7 @@ void StartTask05(void *argument)
 			char str[4];
             screen.DrawText(STATS_VALUES_X, VOLTAGE_SUPP_BATT_LABEL_Y, buffer, RGB565_BLACK);
 			sprintf(str, "%d", dashboardState.dead_bms_message_code);
-			screen.DrawText(20, 220, str, RGB565_BLACK);2
+			screen.DrawText(20, 220, str, RGB565_BLACK);
         );
 
         osDelay(200);
@@ -490,7 +490,7 @@ void Update_CAN_Message1(uint8_t flags[8], uint8_t* Input1, uint8_t* Input2)
 	uint8_t changedEdges_flag2 = (*Input2) ^ prev_input2;
 
 	flags[1] ^= CHECK_BIT(changedEdges_flag2, 4) << 0; // Main
-	if (CHECK_BIT(*Input2, 5) || dashboardState.brake_debug) // Break
+	if (!CHECK_BIT(*Input2, 5) || dashboardState.brake_debug) // Break
 	{
 		flags[1] |= (1 << 1); // Break
 	}

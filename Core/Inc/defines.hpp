@@ -66,14 +66,6 @@
 #define OUTPUT_FR_LIGHT_CTRL    (1 << 4)
 #define OUTPUT_FL_LIGHT_CTRL    (1 << 5)
 
-// GPIO expander output positions (TCAL9538)
-#define OUTPUT_HORN_CTRL_POS        0
-#define OUTPUT_FAN_CTRL_POS         1
-#define OUTPUT_L_HEAD_CTRL_POS      2
-#define OUTPUT_R_HEAD_CTRL_POS      3
-#define OUTPUT_FR_LIGHT_CTRL_POS    4
-#define OUTPUT_FL_LIGHT_CTRL_POS    5
-
 // Macro around code that needs to be in critical region, i.e. no context switching between thread or interrupts
 #define DASHBOARD_CRITICAL(code_block) \
     do {                               \
