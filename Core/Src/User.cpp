@@ -27,8 +27,14 @@ void CPP_UserSetup(void) {
 	// CAN INIT
 	// -------------------------
 	Init_CAN_Filter1(hcan1); // set up CAN filter for CAN1
+	Init_CAN_Filter2(hcan2); // set up CAN filter for CAN1
 	HAL_CAN_Start(&hcan1); // start CAN1
+	HAL_CAN_Start(&hcan2); // start CAN1
 	if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	if (HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
 	{
 		Error_Handler();
 	}
@@ -585,6 +591,24 @@ void Init_CAN_Filter1(CAN_HandleTypeDef &hcan1)
     HAL_CAN_ConfigFilter(&hcan1, &filter);
 }
 
+void Init_CAN_Filter2(CAN_HandleTypeDef &hcan2)
+{
+  	CAN_FilterTypeDef filter = {0};
+    filter.FilterActivation = ENABLE;
+    filter.FilterBank = 0;
+    filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+    filter.FilterMode = CAN_FILTERMODE_IDMASK;
+    filter.FilterScale = CAN_FILTERSCALE_32BIT;
+
+    // Accept ALL messages (for debug/testing)
+    filter.FilterIdHigh = 0x0000;
+    filter.FilterIdLow = 0x0000;
+    filter.FilterMaskIdHigh = 0x0000;
+    filter.FilterMaskIdLow = 0x0000;
+
+    HAL_CAN_ConfigFilter(&hcan2, &filter);
+}
+
 void Init_Screen(ILI9341 &screen)
 {
 	screen.Init();
@@ -652,60 +676,62 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     {
         Error_Handler();
     }
-
-	// vcu sends mc and array status
-    if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_VCU_SENSORS)
-    {
-		uint8_t statusByte = RxData[VCU_SENSORS_STATUS_BYTE_INDEX];
-
-		dashboardState.mcStatus = CHECK_BIT(
-			statusByte, 
-			(int)VCU_SENSORS_STATUS_BITS::VCU_MC_ENABLED_BIT_POS
-		);
-		dashboardState.arrayStatus = CHECK_BIT(
-			statusByte, 
-			(int)VCU_SENSORS_STATUS_BITS::VCU_ARRAY_ENABLED_BIT_POS
-		);
-		dashboardState.direction = CHECK_BIT(
-			statusByte,
-			(int)VCU_SENSORS_STATUS_BITS::VCU_DIRECTION_BIT_POS
-		);
-    }
-	// powerboard sends voltage of supplemental battery 
-	else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_POWERBOARD)
-	{
-		dashboardState.supp_batt_0_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX];
-		dashboardState.supp_batt_1_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX+1];
-		dashboardState.supp_batt_2_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX+2];
-		dashboardState.supp_batt_3_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX+3];
-	}
-	// bms sends contactors closed indicator and other power stuff that we are ignoring on dashboard
-	else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_BMS_POWER_CONSUM_INFO)
-	{
-		dashboardState.bmsStatus = RxData[BMS_CONTACTORS_CLOSED_INDEX]; 
-		dashboardState.dead_bms_message_code = RxData[0];
-	}
-	// mitsuba motor sends velocity and other data?
-	else if (RxHeader.IDE == CAN_ID_EXT && RxHeader.ExtId == CAN_ID_MITSUBA_MOTOR_FRAME_0)
-	{
-		uint64_t full_data = 0;
-		for (int i = 0; i < 8; i++)
+    if (hcan->Instance == CAN1) {
+		// vcu sends mc and array status
+		if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_VCU_SENSORS)
 		{
-			full_data = (full_data << 8) | RxData[7 - i]; // lsb first
-		}
+			uint8_t statusByte = RxData[VCU_SENSORS_STATUS_BYTE_INDEX];
 
-		uint16_t motor_rpm = (full_data >> MITSUBA_RPM_VELOCITY_LSB_BIT_INDEX) & ((1 << MITSUBA_RPM_VELOCITY_LEN) - 1);
-		uint16_t motor_voltage = (full_data >> MITSUBA_VOLTAGE_LSB_BIT_INDEX) & ((1 << MITSUBA_VOLTAGE_LEN) - 1);
-		uint16_t motor_current = (full_data >> MITSUBA_CURRENT_LSB_BIT_INDEX) & ((1 << MITSUBA_CURRENT_LEN) - 1);
-		uint8_t motor_current_direction = (full_data >> MITSUBA_BATTERY_CURRENT_DIRECTION_BIT_INDEX) & 0x01;
-		dashboardState.motor_rpm_lsb = motor_rpm & 0xFF;
-		dashboardState.motor_rpm_msb = (motor_rpm >> 8) & 0xFF;
-		dashboardState.motor_voltage_lsb = motor_voltage & 0xFF;
-		dashboardState.motor_voltage_msb = (motor_voltage >> 8) & 0xFF;
-		dashboardState.motor_current_lsb = motor_current & 0xFF;
-		dashboardState.motor_current_msb = (motor_current >> 8) & 0xFF;
-		dashboardState.motor_current_direction = motor_current_direction;
-	}
+			dashboardState.mcStatus = CHECK_BIT(
+				statusByte,
+				(int)VCU_SENSORS_STATUS_BITS::VCU_MC_ENABLED_BIT_POS
+			);
+			dashboardState.arrayStatus = CHECK_BIT(
+				statusByte,
+				(int)VCU_SENSORS_STATUS_BITS::VCU_ARRAY_ENABLED_BIT_POS
+			);
+			dashboardState.direction = CHECK_BIT(
+				statusByte,
+				(int)VCU_SENSORS_STATUS_BITS::VCU_DIRECTION_BIT_POS
+			);
+		}
+		// powerboard sends voltage of supplemental battery
+		else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_POWERBOARD)
+		{
+			dashboardState.supp_batt_0_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX];
+			dashboardState.supp_batt_1_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX+1];
+			dashboardState.supp_batt_2_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX+2];
+			dashboardState.supp_batt_3_mv = RxData[POWERBOARD_SUPPLEMENTAL_BATTERY_VOLTAGE_LSB_INDEX+3];
+		}
+		// bms sends contactors closed indicator and other power stuff that we are ignoring on dashboard
+		else if (RxHeader.IDE == CAN_ID_STD && RxHeader.StdId == CAN_ID_BMS_POWER_CONSUM_INFO)
+		{
+			dashboardState.bmsStatus = RxData[BMS_CONTACTORS_CLOSED_INDEX];
+			dashboardState.dead_bms_message_code = RxData[0];
+		}
+    } else { // CAN2
+		// mitsuba motor sends velocity and other data?
+		if (RxHeader.IDE == CAN_ID_EXT && RxHeader.ExtId == CAN_ID_MITSUBA_MOTOR_FRAME_0)
+		{
+			uint64_t full_data = 0;
+			for (int i = 0; i < 8; i++)
+			{
+				full_data = (full_data << 8) | RxData[7 - i]; // lsb first
+			}
+
+			uint16_t motor_rpm = (full_data >> MITSUBA_RPM_VELOCITY_LSB_BIT_INDEX) & ((1 << MITSUBA_RPM_VELOCITY_LEN) - 1);
+			uint16_t motor_voltage = (full_data >> MITSUBA_VOLTAGE_LSB_BIT_INDEX) & ((1 << MITSUBA_VOLTAGE_LEN) - 1);
+			uint16_t motor_current = (full_data >> MITSUBA_CURRENT_LSB_BIT_INDEX) & ((1 << MITSUBA_CURRENT_LEN) - 1);
+			uint8_t motor_current_direction = (full_data >> MITSUBA_BATTERY_CURRENT_DIRECTION_BIT_INDEX) & 0x01;
+			dashboardState.motor_rpm_lsb = motor_rpm & 0xFF;
+			dashboardState.motor_rpm_msb = (motor_rpm >> 8) & 0xFF;
+			dashboardState.motor_voltage_lsb = motor_voltage & 0xFF;
+			dashboardState.motor_voltage_msb = (motor_voltage >> 8) & 0xFF;
+			dashboardState.motor_current_lsb = motor_current & 0xFF;
+			dashboardState.motor_current_msb = (motor_current >> 8) & 0xFF;
+			dashboardState.motor_current_direction = motor_current_direction;
+		}
+    }
 }
 
 
